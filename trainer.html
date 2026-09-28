@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тренажёр A1 — 6 режимов + прогресс</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Verdana, Arial, sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    min-height: 100vh;
+    padding: 16px 16px 40px;
+    color: #2b2b2b;
+    letter-spacing: 0.3px;
+  }
+
+  h1 {
+    text-align: center; color: #fff; font-size: 1.5rem;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    text-align: center; color: #b0d4e0;
+    font-size: 0.85rem; margin-bottom: 14px;
+  }
+
+  /* Скрыть категорию везде */
+  .category { display: none !important; }
+
+  .top-bar {
+    max-width: 700px; margin: 0 auto 12px;
+    display: flex; justify-content: center;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .top-pill {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 6px 14px;
+    color: #b0d4e0; font-size: 0.82rem;
+    font-weight: 700;
+  }
+  .top-pill span { color: #fff; }
+
+  .mode-toggle {
+    display: flex; background: rgba(255,255,255,0.12);
+    border-radius: 30px; padding: 4px;
+    border: 1px solid rgba(255,255,255,0.25);
+    margin: 0 auto 16px;
+    max-width: 720px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .mode-toggle button {
+    padding: 9px 14px; border: none; background: transparent;
+    color: #b0d4e0; font-size: 0.82rem; font-weight: 700;
+    border-radius: 25px; cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    flex: 1; min-width: 100px;
+  }
+  .mode-toggle button.active {
+    background: #fff; color: #0f2027;
+  }
+
+  .controls {
+    max-width: 720px; margin: 0 auto 12px;
+    display: flex; justify-content: center;
+    align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .speed-toggle {
+    display: inline-flex; background: rgba(255,255,255,0.12);
+    border-radius: 30px; padding: 4px;
+    border: 1px solid rgba(255,255,255,0.25);
+  }
+  .speed-toggle button {
+    padding: 7px 14px; border: none; background: transparent;
+    color: #b0d4e0; font-size: 0.8rem; font-weight: 600;
+    border-radius: 25px; cursor: pointer; transition: all 0.2s;
+    font-family: inherit;
+  }
+  .speed-toggle button.active {
+    background: #fff; color: #0f2027;
+  }
+  .filter-select {
+    padding: 8px 14px; border-radius: 30px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff; font-family: inherit;
+    font-size: 0.8rem; font-weight: 600;
+    cursor: pointer; max-width: 240px;
+  }
+  .filter-select option { background: #1a3a4a; color: #fff; }
+
+  .stats {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    justify-content: center; margin-bottom: 12px;
+    width: 100%; max-width: 700px;
+    margin-left: auto; margin-right: auto;
+  }
+  .stat-box {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px; padding: 8px 12px;
+    color: #fff; text-align: center;
+    min-width: 72px; flex: 1;
+  }
+  .stat-box .num {
+    font-size: 1.3rem; font-weight: 800;
+    display: block; line-height: 1.1;
+  }
+  .stat-box .lbl {
+    font-size: 0.65rem; text-transform: uppercase;
+    letter-spacing: 1px; color: #b0d4e0;
+    margin-top: 2px;
+  }
+  .stat-box.good .num { color: #4caf50; }
+  .stat-box.bad .num { color: #ff5252; }
+  .stat-box.total .num { color: #ffd166; }
+
+  .progress {
+    width: 100%; max-width: 700px;
+    height: 8px; background: rgba(255,255,255,0.15);
+    border-radius: 4px; overflow: hidden;
+    margin: 0 auto 20px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #ffd166);
+    width: 0%; transition: width 0.4s;
+  }
+
+  .card-wrap {
+    perspective: 1200px;
+    width: 100%; max-width: 520px;
+    height: 430px;
+    margin: 0 auto 16px;
+    position: relative;
+  }
+  .fav-btn {
+    position: absolute; top: 12px; right: 12px;
+    background: rgba(255,255,255,0.9);
+    border: none; border-radius: 50%;
+    width: 40px; height: 40px;
+    font-size: 1.2rem; cursor: pointer;
+    z-index: 10;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    transition: transform 0.15s;
+  }
+  .fav-btn:hover { transform: scale(1.1); }
+  .fav-btn.active { background: #ffd166; }
+
+  .card {
+    position: relative; width: 100%; height: 100%;
+    transition: transform 0.7s;
+    transform-style: preserve-3d;
+    cursor: pointer;
+  }
+  .card.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute; width: 100%; height: 100%;
+    backface-visibility: hidden;
+    border-radius: 20px; padding: 26px 22px;
+    display: flex; flex-direction: column;
+    justify-content: center;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+    overflow-y: auto;
+  }
+  .front {
+    background: #fdf6e3;
+    border-top: 6px solid #ffd166;
+    text-align: center;
+  }
+  .front .word {
+    font-size: 1.7rem; font-weight: 800;
+    color: #1e3c72; margin-bottom: 10px;
+    line-height: 1.25;
+  }
+  .front .pron {
+    font-size: 1rem; color: #b8860b;
+    font-style: italic; margin-bottom: 10px;
+  }
+  .front .extra {
+    font-size: 0.9rem; color: #555;
+    margin-top: 6px; line-height: 1.5;
+  }
+  .front .hint {
+    font-size: 0.72rem; color: #999;
+    margin-top: 14px;
+  }
+  .back {
+    background: linear-gradient(160deg, #1e3c72, #2a5298);
+    color: #fff;
+    transform: rotateY(180deg);
+    text-align: center;
+  }
+  .back .translation {
+    font-size: 1.4rem; font-weight: 800;
+    color: #ffd166; margin-bottom: 14px;
+  }
+  .back .label {
+    font-size: 0.72rem; text-transform: uppercase;
+    letter-spacing: 1.2px; color: #9fb8e8;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    padding-bottom: 4px;
+    text-align: left;
+  }
+  .back .example {
+    font-size: 0.95rem; line-height: 1.5;
+    margin-bottom: 10px; text-align: left;
+    display: flex; gap: 10px;
+    align-items: flex-start;
+  }
+  .back .example .text { flex: 1; }
+  .back .example .de { font-weight: 600; color: #fff; display: block; margin-bottom: 3px; }
+  .back .example .ru { color: #bcd0f7; font-size: 0.88rem; display: block; }
+  .back .example .tr {
+    color: #ffd166; font-size: 0.85rem;
+    font-style: italic; display: block;
+    margin-bottom: 3px;
+  }
+  .speak-mini {
+    background: rgba(255,255,255,0.18);
+    color: #fff; border: none;
+    border-radius: 50%; width: 32px; height: 32px;
+    font-size: 0.85rem; cursor: pointer;
+    flex-shrink: 0;
+    display: flex; align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .speak-mini:hover { background: rgba(255,255,255,0.35); }
+
+  .quiz-wrap { max-width: 560px; margin: 0 auto; }
+  .quiz-question {
+    background: #fdf6e3;
+    border-top: 6px solid #ffd166;
+    border-radius: 20px;
+    padding: 24px 22px;
+    text-align: center;
+    margin-bottom: 16px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+    min-height: 120px;
+    display: flex; flex-direction: column;
+    justify-content: center;
+  }
+  .quiz-question .q-word {
+    font-size: 1.8rem; font-weight: 800;
+    color: #1e3c72; line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .quiz-question .q-pron {
+    font-size: 0.95rem; color: #b8860b;
+    font-style: italic;
+  }
+  .quiz-question.audio-mode .q-word {
+    font-size: 3rem; color: #1e3c72;
+    letter-spacing: 6px; margin: 12px 0;
+  }
+  .quiz-question.audio-mode .q-pron {
+    color: #999; font-style: normal; font-size: 0.85rem;
+  }
+  .quiz-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .quiz-option {
+    background: rgba(255,255,255,0.95);
+    border: 2px solid transparent;
+    border-radius: 14px;
+    padding: 16px 14px;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e3c72;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.2s, border-color 0.2s;
+    font-family: inherit;
+    min-height: 64px;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1.3;
+  }
+  .quiz-option:hover:not(.answered) {
+    transform: translateY(-2px);
+    background: #fff;
+    border-color: #ffd166;
+  }
+  .quiz-option.correct {
+    background: #4caf50 !important;
+    color: #fff !important;
+    border-color: #2e7d32 !important;
+  }
+  .quiz-option.wrong {
+    background: #ff5252 !important;
+    color: #fff !important;
+    border-color: #c62828 !important;
+  }
+  .quiz-option.answered { cursor: default; }
+  .quiz-feedback {
+    text-align: center;
+    font-size: 0.95rem;
+    color: #fff;
+    margin-top: 16px;
+    min-height: 24px;
+    font-weight: 700;
+  }
+  .quiz-feedback.correct { color: #4caf50; }
+  .quiz-feedback.wrong { color: #ff5252; }
+
+  .build-wrap { max-width: 620px; margin: 0 auto; }
+  .build-question {
+    background: #fdf6e3;
+    border-top: 6px solid #ffd166;
+    border-radius: 20px;
+    padding: 22px;
+    text-align: center;
+    margin-bottom: 14px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  }
+  .build-question .q-ru {
+    font-size: 1.15rem; font-weight: 700;
+    color: #1e3c72;
+    margin-bottom: 6px;
+  }
+  .build-question .q-hint {
+    font-size: 0.82rem; color: #999;
+    font-style: italic;
+  }
+  .build-answer {
+    background: rgba(255,255,255,0.95);
+    border-radius: 14px;
+    padding: 14px 16px;
+    min-height: 60px;
+    margin-bottom: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    border: 2px dashed #ffd166;
+  }
+  .build-answer:empty::before {
+    content: 'Нажимай слова внизу, чтобы собрать предложение';
+    color: #999; font-style: italic; font-size: 0.85rem;
+  }
+  .build-tiles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+  .build-tile {
+    background: #fff;
+    border: 2px solid #1e3c72;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e3c72;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.2s;
+    font-family: inherit;
+  }
+  .build-tile:hover:not(.used) {
+    transform: translateY(-2px);
+    background: #ffd166;
+  }
+  .build-tile.used {
+    opacity: 0.2;
+    cursor: default;
+  }
+  .build-tile.chosen {
+    background: #1e3c72;
+    color: #fff;
+  }
+  .build-feedback {
+    text-align: center;
+    font-size: 0.95rem;
+    margin-top: 8px;
+    min-height: 24px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .build-feedback.correct { color: #4caf50; }
+  .build-feedback.wrong { color: #ff5252; }
+
+  .write-wrap { max-width: 520px; margin: 0 auto; }
+  .write-question {
+    background: #fdf6e3;
+    border-top: 6px solid #ffd166;
+    border-radius: 20px;
+    padding: 24px 22px;
+    text-align: center;
+    margin-bottom: 16px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  }
+  .write-question .q-ru {
+    font-size: 1.6rem; font-weight: 800;
+    color: #1e3c72;
+    margin-bottom: 8px;
+  }
+  .write-question .q-hint {
+    font-size: 0.82rem; color: #999;
+    font-style: italic;
+  }
+  .write-input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #1e3c72;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-family: inherit;
+    margin-bottom: 14px;
+    text-align: center;
+    background: #fff;
+    color: #1e3c72;
+    font-weight: 700;
+  }
+  .write-input:focus {
+    outline: none;
+    border-color: #ffd166;
+    box-shadow: 0 0 0 3px rgba(255,209,102,0.3);
+  }
+  .write-input.correct {
+    border-color: #4caf50;
+    background: #e8f5e9;
+  }
+  .write-input.wrong {
+    border-color: #ff5252;
+    background: #ffebee;
+  }
+
+  .buttons {
+    display: flex; gap: 10px;
+    justify-content: center; flex-wrap: wrap;
+    width: 100%; max-width: 560px;
+    margin: 0 auto;
+  }
+  .btn {
+    padding: 12px 20px; border: none;
+    border-radius: 12px; font-size: 0.95rem;
+    font-weight: 700; cursor: pointer;
+    transition: transform 0.15s;
+    font-family: inherit;
+    flex: 1; min-width: 110px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+  .btn-show { background: #ffd166; color: #7a2006; box-shadow: 0 4px 12px rgba(255,209,102,0.4); }
+  .btn-good { background: #4caf50; color: #fff; box-shadow: 0 4px 12px rgba(76,175,80,0.4); }
+  .btn-bad { background: #ff5252; color: #fff; box-shadow: 0 4px 12px rgba(255,82,82,0.4); }
+  .btn-next { background: #2196f3; color: #fff; box-shadow: 0 4px 12px rgba(33,150,243,0.4); }
+  .btn-check { background: #9c27b0; color: #fff; box-shadow: 0 4px 12px rgba(156,39,176,0.4); }
+  .btn-reset {
+    background: rgba(255,255,255,0.15); color: #fff;
+    border: 1px solid rgba(255,255,255,0.3);
+    flex: 0 0 auto; min-width: 0;
+    padding: 10px 16px; font-size: 0.82rem;
+  }
+
+  .finish {
+    display: none; max-width: 540px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 32px 24px;
+    text-align: center; color: #fff;
+    margin: 0 auto;
+  }
+  .finish h2 { font-size: 1.4rem; margin-bottom: 10px; color: #ffd166; }
+  .finish p { font-size: 1rem; margin-bottom: 16px; line-height: 1.55; }
+  .finish .score-big {
+    font-size: 2.5rem; font-weight: 800;
+    color: #4caf50; display: block; margin: 10px 0;
+  }
+  .finish .btn {
+    display: inline-block; margin: 4px; flex: 0 0 auto;
+    min-width: 0; padding: 12px 18px;
+  }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 1.15rem; }
+    .card-wrap { height: 470px; }
+    .front .word { font-size: 1.4rem; }
+    .back .translation { font-size: 1.25rem; }
+    .stat-box .num { font-size: 1.1rem; }
+    .stat-box { min-width: 60px; padding: 6px 8px; }
+    .btn { padding: 10px 12px; font-size: 0.85rem; min-width: 0; }
+    .quiz-options { grid-template-columns: 1fr; }
+    .mode-toggle button { font-size: 0.72rem; padding: 8px 8px; min-width: 80px; }
+    .quiz-question .q-word { font-size: 1.4rem; }
+    .write-question .q-ru { font-size: 1.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🎯 Тренажёр A1 — 6 режимов</h1>
+<p class="subtitle">Карточки · Тест · Аудио · Предложение · Перевод · Избранное</p>
+
+<div class="top-bar">
+  <div class="top-pill">⏱ Время: <span id="timerDisplay">0:00</span></div>
+  <div class="top-pill">📚 Выучено: <span id="learnedCount">0</span></div>
+  <div class="top-pill">⭐ В избранном: <span id="favCount">0</span></div>
+</div>
+
+<div class="mode-toggle">
+  <button id="modeCards" class="active" onclick="setMode('cards')">🎴 Карточки</button>
+  <button id="modeQuiz" onclick="setMode('quiz')">☑️ Тест</button>
+  <button id="modeAudio" onclick="setMode('audio')">🔊 Аудио</button>
+  <button id="modeBuild" onclick="setMode('build')">📝 Предложение</button>
+  <button id="modeWrite" onclick="setMode('write')">✍️ Перевод</button>
+  <button id="modeFav" onclick="setMode('fav')">⭐ Избранное</button>
+</div>
+
+<div class="controls">
+  <div class="speed-toggle">
+    <button id="speedSlow" class="active" onclick="setSpeed('slow')">🐢 Медленно</button>
+    <button id="speedNormal" onclick="setSpeed('normal')">🐇 Обычно</button>
+  </div>
+  <select class="filter-select" id="filterSelect" onchange="applyFilter()">
+    <option value="all">📚 Все категории</option>
+    <option value="Глаголы">⚡ Глаголы</option>
+    <option value="Вопросы">💬 Вопросы</option>
+    <option value="Семья, люди, профессии">👨‍👩‍👧 Семья</option>
+    <option value="Дом, квартира, мебель">🏠 Дом</option>
+    <option value="Еда, напитки, магазины">🍞 Еда</option>
+    <option value="Город, транспорт, места">🏙️ Город</option>
+    <option value="Время, дни, месяцы">🕐 Время</option>
+    <option value="Тело, здоровье, одежда">💪 Тело</option>
+    <option value="Прилагательные">🎨 Прилагательные</option>
+    <option value="Наречия">🧭 Наречия</option>
+    <option value="Служебные слова">🧩 Служебные</option>
+    <option value="Числительные">🔢 Числительные</option>
+    <option value="Полезные фразы">💬 Фразы</option>
+  </select>
+</div>
+
+<div class="stats">
+  <div class="stat-box total"><span class="num" id="statTotal">0</span><div class="lbl">Всего</div></div>
+  <div class="stat-box good"><span class="num" id="statGood">0</span><div class="lbl">Верно</div></div>
+  <div class="stat-box bad"><span class="num" id="statBad">0</span><div class="lbl">Ошибок</div></div>
+  <div class="stat-box"><span class="num" id="statLeft">0</span><div class="lbl">Осталось</div></div>
+</div>
+
+<div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+
+<div id="trainerView">
+
+  <div id="cardsMode">
+    <div class="card-wrap">
+      <button class="fav-btn" id="favBtn" onclick="toggleFavorite()" title="В избранное">☆</button>
+      <div class="card" id="card" onclick="flipCard()">
+        <div class="card-face front">
+          <div class="word" id="cardWord">—</div>
+          <div class="pron" id="cardPron"></div>
+          <div class="extra" id="cardExtra"></div>
+          <div class="hint">нажми, чтобы перевернуть 🔄</div>
+        </div>
+        <div class="card-face back">
+          <div class="translation" id="cardTrans">—</div>
+          <div class="label">Пример</div>
+          <div class="example" id="cardExample"></div>
+        </div>
+      </div>
+    </div>
+    <div class="buttons">
+      <button class="btn btn-show" id="btnShow" onclick="flipCard()">Показать ответ</button>
+      <button class="btn btn-good" id="btnGood" onclick="answer(true)" disabled>✓ Знаю</button>
+      <button class="btn btn-bad" id="btnBad" onclick="answer(false)" disabled>✗ Не знаю</button>
+      <button class="btn btn-reset" onclick="resetAll()">⟲ Сброс</button>
+    </div>
+  </div>
+
+  <div id="quizMode" style="display:none;">
+    <div class="quiz-wrap">
+      <div class="quiz-question" id="quizQuestion">
+        <div class="q-word" id="quizWord">—</div>
+        <div class="q-pron" id="quizPron"></div>
+      </div>
+      <div class="quiz-options" id="quizOptions"></div>
+      <div class="quiz-feedback" id="quizFeedback"></div>
+    </div>
+    <div class="buttons" style="margin-top: 16px;">
+      <button class="btn btn-show" id="btnQuizShow" onclick="revealQuizAnswer()">Показать ответ</button>
+      <button class="btn btn-next" id="btnQuizNext" onclick="nextItem()" disabled>Следующее →</button>
+      <button class="btn btn-reset" onclick="resetAll()">⟲ Сброс</button>
+    </div>
+  </div>
+
+  <div id="buildMode" style="display:none;">
+    <div class="build-wrap">
+      <div class="build-question">
+        <div class="q-ru" id="buildRu">—</div>
+        <div class="q-hint" id="buildHint">Соберите немецкое предложение из слов ниже</div>
+      </div>
+      <div class="build-answer" id="buildAnswer"></div>
+      <div class="build-tiles" id="buildTiles"></div>
+      <div class="build-feedback" id="buildFeedback"></div>
+    </div>
+    <div class="buttons" style="margin-top: 16px;">
+      <button class="btn btn-check" id="btnBuildCheck" onclick="checkBuild()" disabled>Проверить</button>
+      <button class="btn btn-next" id="btnBuildNext" onclick="nextItem()" disabled>Следующее →</button>
+      <button class="btn btn-reset" onclick="resetAll()">⟲ Сброс</button>
+    </div>
+  </div>
+
+  <div id="writeMode" style="display:none;">
+    <div class="write-wrap">
+      <div class="write-question">
+        <div class="q-ru" id="writeRu">—</div>
+        <div class="q-hint" id="writeHint">Введите перевод на немецком</div>
+      </div>
+      <input type="text" class="write-input" id="writeInput"
+             placeholder="..." autocomplete="off" autocorrect="off"
+             autocapitalize="off" spellcheck="false"
+             oninput="onWriteInput()" onkeydown="onWriteKey(event)">
+      <div class="quiz-feedback" id="writeFeedback"></div>
+    </div>
+    <div class="buttons" style="margin-top: 16px;">
+      <button class="btn btn-check" id="btnWriteCheck" onclick="checkWrite()" disabled>Проверить</button>
+      <button class="btn btn-next" id="btnWriteNext" onclick="nextItem()" disabled>Следующее →</button>
+      <button class="btn btn-reset" onclick="resetAll()">⟲ Сброс</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="finish" id="finishView">
+  <h2>🎉 Тренировка завершена!</h2>
+  <p>Твой результат:</p>
+  <span class="score-big" id="finalScore">0%</span>
+  <p id="finalText"></p>
+  <p style="font-size: 0.85rem; opacity: 0.8;">⏱ Время: <span id="finalTime">0:00</span></p>
+  <button class="btn btn-good" onclick="resetAll()">Пройти заново</button>
+  <button class="btn btn-bad" onclick="retryMistakes()">Повторить ошибки</button>
+</div>
+
+<script>
+/* =====================================================
+   БАЗА КАРТОЧЕК (~340 штук)
+   ===================================================== */
+const CARDS = [];
+
+/* ГЛАГОЛЫ (44) */
+[
+  {w:'sein', p:'[зайн]', e:'ich bin · du bist · er ist · wir sind · ihr seid · sie sind', t:'быть', ex:'Ich bin Student.', exr:'Я студент.', extr:'[ихь бин шту-дэ́нт]'},
+  {w:'haben', p:'[ха́-бэн]', e:'ich habe · du hast · er hat · wir haben · ihr habt · sie haben', t:'иметь', ex:'Ich habe einen Hund.', exr:'У меня есть собака.', extr:'[ихь ха́-бэ а́й-нэн хунт]'},
+  {w:'werden', p:'[вэ́р-дэн]', e:'ich werde · du wirst · er wird · wir werden · ihr werdet · sie werden', t:'становиться', ex:'Ich werde Arzt.', exr:'Я становлюсь врачом.', extr:'[ихь вэ́р-дэ арцт]'},
+  {w:'können', p:'[кё́-нэн]', e:'ich kann · du kannst · er kann · wir können · ihr könnt · sie können', t:'мочь / уметь', ex:'Ich kann Deutsch sprechen.', exr:'Я умею говорить по-немецки.', extr:'[ихь кан дойч шпрэ́-хэн]'},
+  {w:'müssen', p:'[мю́-сэн]', e:'ich muss · du musst · er muss · wir müssen · ihr müsst · sie müssen', t:'быть должным', ex:'Ich muss arbeiten.', exr:'Я должен работать.', extr:'[ихь мус а́р-бай-тэн]'},
+  {w:'wollen', p:'[во́-лэн]', e:'ich will · du willst · er will · wir wollen · ihr wollt · sie wollen', t:'хотеть', ex:'Ich will nach Hause.', exr:'Я хочу домой.', extr:'[ихь виль нах ха́у-зэ]'},
+  {w:'sollen', p:'[зо́-лэн]', e:'ich soll · du sollst · er soll · wir sollen · ihr sollt · sie sollen', t:'быть должным (совет)', ex:'Du sollst mehr schlafen.', exr:'Тебе следует больше спать.', extr:'[ду зольст мэр шла́-фэн]'},
+  {w:'dürfen', p:'[дю́р-фэн]', e:'ich darf · du darfst · er darf · wir dürfen · ihr dürft · sie dürfen', t:'иметь разрешение', ex:'Darf ich hereinkommen?', exr:'Можно войти?', extr:'[дарф ихь хэ-ра́йн-ко-мэн]'},
+  {w:'mögen', p:'[мё́-гэн]', e:'ich mag · du magst · er mag · wir mögen · ihr mögt · sie mögen', t:'любить / нравиться', ex:'Ich mag Schokolade.', exr:'Я люблю шоколад.', extr:'[ихь мак шо-ко-ла́-дэ]'},
+  {w:'möchten', p:'[мё́хь-тэн]', e:'ich möchte · du möchtest · er möchte · wir möchten · ihr möchtet · sie möchten', t:'хотел бы', ex:'Ich möchte einen Kaffee.', exr:'Я хотел бы кофе.', extr:'[ихь мё́хь-тэ а́й-нэн ка-фэ́]'},
+  {w:'gehen', p:'[гэ́-эн]', e:'ich gehe · du gehst · er geht · wir gehen · ihr geht · sie gehen', t:'идти / ходить', ex:'Ich gehe nach Hause.', exr:'Я иду домой.', extr:'[ихь гэ́-э нах ха́у-зэ]'},
+  {w:'kommen', p:'[ко́-мэн]', e:'ich komme · du kommst · er kommt · wir kommen · ihr kommt · sie kommen', t:'приходить', ex:'Ich komme aus Russland.', exr:'Я из России.', extr:'[ихь ко́-мэ аус ру́с-лант]'},
+  {w:'machen', p:'[ма́-хэн]', e:'ich mache · du machst · er macht · wir machen · ihr macht · sie machen', t:'делать', ex:'Was machst du?', exr:'Что ты делаешь?', extr:'[вас махст ду]'},
+  {w:'sprechen', p:'[шпрэ́-хэн]', e:'ich spreche · du sprichst · er spricht · wir sprechen · ihr sprecht · sie sprechen', t:'говорить', ex:'Ich spreche Deutsch.', exr:'Я говорю по-немецки.', extr:'[ихь шпрэ́-хэ дойч]'},
+  {w:'lesen', p:'[ле́-зэн]', e:'ich lese · du liest · er liest · wir lesen · ihr lest · sie lesen', t:'читать', ex:'Ich lese ein Buch.', exr:'Я читаю книгу.', extr:'[ихь ле́-зэ айн бух]'},
+  {w:'schreiben', p:'[шра́й-бэн]', e:'ich schreibe · du schreibst · er schreibt · wir schreiben · ihr schreibt · sie schreiben', t:'писать', ex:'Ich schreibe einen Brief.', exr:'Я пишу письмо.', extr:'[ихь шра́й-бэ а́й-нэн бри́ф]'},
+  {w:'essen', p:'[э́-сэн]', e:'ich esse · du isst · er isst · wir essen · ihr esst · sie essen', t:'есть / кушать', ex:'Ich esse einen Apfel.', exr:'Я ем яблоко.', extr:'[ихь э́-сэ а́й-нэн а́п-фэль]'},
+  {w:'trinken', p:'[три́н-кэн]', e:'ich trinke · du trinkst · er trinkt · wir trinken · ihr trinkt · sie trinken', t:'пить', ex:'Ich trinke Kaffee.', exr:'Я пью кофе.', extr:'[ихь три́н-кэ ка-фэ́]'},
+  {w:'schlafen', p:'[шла́-фэн]', e:'ich schlafe · du schläfst · er schläft · wir schlafen · ihr schlaft · sie schlafen', t:'спать', ex:'Ich schlafe acht Stunden.', exr:'Я сплю восемь часов.', extr:'[ихь шла́-фэ ахт шту́н-дэн]'},
+  {w:'arbeiten', p:'[а́р-бай-тэн]', e:'ich arbeite · du arbeitest · er arbeitet · wir arbeiten · ihr arbeitet · sie arbeiten', t:'работать', ex:'Ich arbeite in Berlin.', exr:'Я работаю в Берлине.', extr:'[ихь а́р-бай-тэ ин бэр-ли́н]'},
+  {w:'lernen', p:'[ле́р-нэн]', e:'ich lerne · du lernst · er lernt · wir lernen · ihr lernt · sie lernen', t:'учить(ся)', ex:'Ich lerne Deutsch.', exr:'Я учу немецкий.', extr:'[ихь ле́р-нэ дойч]'},
+  {w:'verstehen', p:'[фэр-штэ́-эн]', e:'ich verstehe · du verstehst · er versteht · wir verstehen · ihr versteht · sie verstehen', t:'понимать', ex:'Ich verstehe dich.', exr:'Я тебя понимаю.', extr:'[ихь фэр-штэ́-э дихь]'},
+  {w:'fahren', p:'[фа́-рэн]', e:'ich fahre · du fährst · er fährt · wir fahren · ihr fahrt · sie fahren', t:'ехать', ex:'Ich fahre nach München.', exr:'Я еду в Мюнхен.', extr:'[ихь фа́-рэ нах мю́н-хэн]'},
+  {w:'kaufen', p:'[ка́у-фэн]', e:'ich kaufe · du kaufst · er kauft · wir kaufen · ihr kauft · sie kaufen', t:'покупать', ex:'Ich kaufe Brot.', exr:'Я покупаю хлеб.', extr:'[ихь ка́у-фэ брот]'},
+  {w:'sehen', p:'[зэ́-эн]', e:'ich sehe · du siehst · er sieht · wir sehen · ihr seht · sie sehen', t:'видеть', ex:'Ich sehe einen Vogel.', exr:'Я вижу птицу.', extr:'[ихь зэ́-э а́й-нэн фо́-гэль]'},
+  {w:'hören', p:'[хё́-э-рэн]', e:'ich höre · du hörst · er hört · wir hören · ihr hört · sie hören', t:'слышать / слушать', ex:'Ich höre Musik.', exr:'Я слушаю музыку.', extr:'[ихь хё́-э му-зи́к]'},
+  {w:'wohnen', p:'[во́-нэн]', e:'ich wohne · du wohnst · er wohnt · wir wohnen · ihr wohnt · sie wohnen', t:'жить (проживать)', ex:'Ich wohne in Moskau.', exr:'Я живу в Москве.', extr:'[ихь во́-нэ ин мо́с-кау]'},
+  {w:'spielen', p:'[шпи́-лэн]', e:'ich spiele · du spielst · er spielt · wir spielen · ihr spielt · sie spielen', t:'играть', ex:'Ich spiele Fußball.', exr:'Я играю в футбол.', extr:'[ихь шпи́-лэ фу́с-баль]'},
+  {w:'geben', p:'[ге́-бэн]', e:'ich gebe · du gibst · er gibt · wir geben · ihr gebt · sie geben', t:'давать', ex:'Ich gebe dir ein Buch.', exr:'Я даю тебе книгу.', extr:'[ихь ге́-бэ дир айн бух]'},
+  {w:'nehmen', p:'[не́-мэн]', e:'ich nehme · du nimmst · er nimmt · wir nehmen · ihr nehmt · sie nehmen', t:'брать', ex:'Ich nehme den Bus.', exr:'Я еду на автобусе.', extr:'[ихь не́-мэ дэн бус]'},
+  {w:'heißen', p:'[ха́й-сэн]', e:'ich heiße · du heißt · er heißt · wir heißen · ihr heißt · sie heißen', t:'зваться', ex:'Ich heiße Anna.', exr:'Меня зовут Анна.', extr:'[ихь ха́й-сэ а́-на]'},
+  {w:'sagen', p:'[за́-гэн]', e:'ich sage · du sagst · er sagt · wir sagen · ihr sagt · sie sagen', t:'говорить / сказать', ex:'Was sagst du?', exr:'Что ты говоришь?', extr:'[вас за́кст ду]'},
+  {w:'fragen', p:'[фра́-гэн]', e:'ich frage · du fragst · er fragt · wir fragen · ihr fragt · sie fragen', t:'спрашивать', ex:'Ich frage den Lehrer.', exr:'Я спрашиваю учителя.', extr:'[ихь фра́-гэ дэн ле́-рэр]'},
+  {w:'brauchen', p:'[бра́у-хэн]', e:'ich brauche · du brauchst · er braucht · wir brauchen · ihr braucht · sie brauchen', t:'нуждаться', ex:'Ich brauche Hilfe.', exr:'Мне нужна помощь.', extr:'[ихь бра́у-хэ хи́ль-фэ]'},
+  {w:'finden', p:'[фи́н-дэн]', e:'ich finde · du findest · er findet · wir finden · ihr findet · sie finden', t:'находить; считать', ex:'Ich finde den Schlüssel.', exr:'Я нахожу ключ.', extr:'[ихь фи́н-дэ дэн шлю́-сэль]'},
+  {w:'suchen', p:'[зу́-хэн]', e:'ich suche · du suchst · er sucht · wir suchen · ihr sucht · sie suchen', t:'искать', ex:'Ich suche meine Brille.', exr:'Я ищу свои очки.', extr:'[ихь зу́-хэ ма́й-нэ бри́-лэ]'},
+  {w:'helfen', p:'[хэ́ль-фэн]', e:'ich helfe · du hilfst · er hilft · wir helfen · ihr helft · sie helfen', t:'помогать', ex:'Ich helfe meiner Mutter.', exr:'Я помогаю маме.', extr:'[ихь хэ́ль-фэ ма́й-нэр му́-тэр]'},
+  {w:'bleiben', p:'[бля́й-бэн]', e:'ich bleibe · du bleibst · er bleibt · wir bleiben · ihr bleibt · sie bleiben', t:'оставаться', ex:'Ich bleibe zu Hause.', exr:'Я остаюсь дома.', extr:'[ихь бля́й-бэ цу ха́у-зэ]'},
+  {w:'aufstehen', p:'[а́уф-штэ-эн]', e:'ich stehe auf · du stehst auf · er steht auf · wir stehen auf · ihr steht auf · sie stehen auf', t:'вставать', ex:'Ich stehe um 7 Uhr auf.', exr:'Я встаю в 7 часов.', extr:'[ихь штэ́-э ум зи́-бэн ур ауф]'},
+  {w:'einkaufen', p:'[а́йн-кау-фэн]', e:'ich kaufe ein · du kaufst ein · er kauft ein · wir kaufen ein · ihr kauft ein · sie kaufen ein', t:'делать покупки', ex:'Ich kaufe im Supermarkt ein.', exr:'Я делаю покупки в супермаркете.', extr:'[ихь ка́у-фэ им зу́-пэр-маркт айн]'},
+  {w:'anrufen', p:'[а́н-ру-фэн]', e:'ich rufe an · du rufst an · er ruft an · wir rufen an · ihr ruft an · sie rufen an', t:'звонить', ex:'Ich rufe dich morgen an.', exr:'Я позвоню тебе завтра.', extr:'[ихь ру́-фэ дихь мо́р-гэн ан]'},
+  {w:'anfangen', p:'[а́н-фан-гэн]', e:'ich fange an · du fängst an · er fängt an · wir fangen an · ihr fangt an · sie fangen an', t:'начинать', ex:'Der Film fängt um 8 an.', exr:'Фильм начинается в 8.', extr:'[дэр фильм фэнгт ум ахт ан]'},
+  {w:'aufhören', p:'[а́уф-хё-рэн]', e:'ich höre auf · du hörst auf · er hört auf · wir hören auf · ihr hört auf · sie hören auf', t:'прекращать', ex:'Hör bitte auf!', exr:'Прекрати, пожалуйста!', extr:'[хёр би́-тэ ауф]'},
+  {w:'mitkommen', p:'[ми́т-ко-мэн]', e:'ich komme mit · du kommst mit · er kommt mit · wir kommen mit · ihr kommt mit · sie kommen mit', t:'идти с кем-то', ex:'Kommst du mit?', exr:'Ты пойдёшь со мной?', extr:'[комст ду мит]'}
+].forEach(g => CARDS.push({c:'Глаголы', w:g.w, p:g.p, e:g.e, t:g.t, ex:g.ex, exr:g.exr, extr:g.extr}));
+
+/* ВОПРОСЫ (30) */
+[
+  {w:"Wie geht's?", p:'[ви гэйтс]', t:'Как дела?', ex:'Mir geht es gut, danke.', exr:'У меня всё хорошо, спасибо.', extr:'[мир гэйт эс гут да́н-кэ]'},
+  {w:'Wie heißen Sie?', p:'[ви ха́й-сэн зи]', t:'Как Вас зовут?', ex:'Ich heiße Schmidt.', exr:'Меня зовут Шмидт.', extr:'[ихь ха́й-сэ шмит]'},
+  {w:'Wie heißt du?', p:'[ви хайст ду]', t:'Как тебя зовут?', ex:'Ich heiße Anna.', exr:'Меня зовут Анна.', extr:'[ихь ха́й-сэ а́-на]'},
+  {w:'Woher kommen Sie?', p:'[во-хэ́р ко́-мэн зи]', t:'Откуда Вы?', ex:'Ich komme aus Russland.', exr:'Я из России.', extr:'[ихь ко́-мэ аус ру́с-лант]'},
+  {w:'Wo wohnen Sie?', p:'[во во́-нэн зи]', t:'Где Вы живёте?', ex:'Ich wohne in Berlin.', exr:'Я живу в Берлине.', extr:'[ихь во́-нэ ин бэр-ли́н]'},
+  {w:'Wie alt bist du?', p:'[ви альт бист ду]', t:'Сколько тебе лет?', ex:'Ich bin 25 Jahre alt.', exr:'Мне 25 лет.', extr:'[ихь бин фюнф-унт-цва́н-цихь я́-рэ альт]'},
+  {w:'Was machst du beruflich?', p:'[вас махст ду бэ-ру́ф-лихь]', t:'Кем ты работаешь?', ex:'Ich bin Student.', exr:'Я студент.', extr:'[ихь бин шту-дэ́нт]'},
+  {w:'Wann hast du Geburtstag?', p:'[ван хаст ду гэ-бу́рт-стак]', t:'Когда у тебя день рождения?', ex:'Ich habe am 5. Mai Geburtstag.', exr:'У меня день рождения 5 мая.', extr:'[ихь ха́-бэ ам фю́нф-тэн май гэ-бу́рт-стак]'},
+  {w:'Was ist das?', p:'[вас ист дас]', t:'Что это?', ex:'Das ist ein Buch.', exr:'Это книга.', extr:'[дас ист айн бух]'},
+  {w:'Wie viel kostet das?', p:'[ви филь ко́-стэт дас]', t:'Сколько это стоит?', ex:'Das kostet 5 Euro.', exr:'Это стоит 5 евро.', extr:'[дас ко́-стэт фюнф о́й-ро]'},
+  {w:'Wo ist der Bahnhof?', p:'[во ист дэр ба́н-хоф]', t:'Где вокзал?', ex:'Der Bahnhof ist dort rechts.', exr:'Вокзал там справа.', extr:'[дэр ба́н-хоф ист дорт рэхьтс]'},
+  {w:'Was möchten Sie trinken?', p:'[вас мё́хь-тэн зи три́н-кэн]', t:'Что Вы хотите выпить?', ex:'Ich möchte einen Kaffee.', exr:'Я хотел бы кофе.', extr:'[ихь мё́хь-тэ а́й-нэн ка-фэ́]'},
+  {w:'Was isst du gern?', p:'[вас ист ду гэрн]', t:'Что ты любишь есть?', ex:'Ich esse gern Pizza.', exr:'Я люблю пиццу.', extr:'[ихь э́-сэ гэрн пи́ц-ца]'},
+  {w:'Wie ist das Wetter heute?', p:'[ви ист дас вэ́-тэр хо́й-тэ]', t:'Какая сегодня погода?', ex:'Die Sonne scheint.', exr:'Солнце светит.', extr:'[ди зо́-нэ шайнт]'},
+  {w:'Wie kommen Sie zur Arbeit?', p:'[ви ко́-мэн зи цур а́р-байт]', t:'Как Вы добираетесь до работы?', ex:'Ich fahre mit dem Bus.', exr:'Я еду на автобусе.', extr:'[ихь фа́-рэ мит дэм бус]'},
+  {w:'Hast du Geschwister?', p:'[хаст ду гэ-шви́-стэр]', t:'У тебя есть братья или сёстры?', ex:'Ja, ich habe einen Bruder.', exr:'Да, у меня есть брат.', extr:'[я ихь ха́-бэ а́й-нэн бру́-дэр]'},
+  {w:'Hast du Kinder?', p:'[хаст ду ки́н-дэр]', t:'У тебя есть дети?', ex:'Ja, ich habe zwei Kinder.', exr:'Да, у меня двое детей.', extr:'[я ихь ха́-бэ цвай ки́н-дэр]'},
+  {w:'Bist du verheiratet?', p:'[бист ду фэр-ха́й-ра-тэт]', t:'Ты женат / замужем?', ex:'Nein, ich bin ledig.', exr:'Нет, я не женат / не замужем.', extr:'[найн ихь бин ле́-дихь]'},
+  {w:'Was ist dein Hobby?', p:'[вас ист дайн хо́б-би]', t:'Какое у тебя хобби?', ex:'Ich lese gern.', exr:'Я люблю читать.', extr:'[ихь ле́-зэ гэрн]'},
+  {w:'Wie viele Sprachen sprichst du?', p:'[ви фи́-лэ шпра́-хэн шприхьст ду]', t:'На скольких языках ты говоришь?', ex:'Ich spreche zwei Sprachen.', exr:'Я говорю на двух языках.', extr:'[ихь шпрэ́-хэ цвай шпра́-хэн]'},
+  {w:'Wann hast du Zeit?', p:'[ван хаст ду цайт]', t:'Когда у тебя есть время?', ex:'Am Montag um 15 Uhr.', exr:'В понедельник в 15 часов.', extr:'[ам мо́н-так ум фюнф-цэн ур]'},
+  {w:'Wo warst du gestern?', p:'[во варст ду гэ́-стэрн]', t:'Где ты был вчера?', ex:'Ich war zu Hause.', exr:'Я был дома.', extr:'[ихь вар цу ха́у-зэ]'},
+  {w:'Was hast du am Wochenende gemacht?', p:'[вас хаст ду ам во́-хэн-эн-дэ гэ-ма́хт]', t:'Что ты делал на выходных?', ex:'Ich habe Freunde getroffen.', exr:'Я встречался с друзьями.', extr:'[ихь ха́-бэ фро́йн-дэ гэ-тро́-фэн]'},
+  {w:'Seit wann lernst du Deutsch?', p:'[зайт ван лернст ду дойч]', t:'С каких пор ты учишь немецкий?', ex:'Seit einem Jahr.', exr:'Год.', extr:'[зайт а́й-нэм яр]'},
+  {w:'Wie spät ist es?', p:'[ви шпэт ист эс]', t:'Который час?', ex:'Es ist drei Uhr.', exr:'Три часа.', extr:'[эс ист драй ур]'},
+  {w:'Kann ich mit Karte zahlen?', p:'[кан ихь мит ка́р-тэ ца́-лэн]', t:'Можно оплатить картой?', ex:'Ja, natürlich.', exr:'Да, конечно.', extr:'[я на-тю́р-лихь]'},
+  {w:'Kannst du mir helfen?', p:'[канст ду мир хэ́ль-фэн]', t:'Ты можешь мне помочь?', ex:'Ja, gern.', exr:'Да, с удовольствием.', extr:'[я гэрн]'},
+  {w:'Können Sie das wiederholen?', p:'[кё́-нэн зи дас ви-дэр-хо́-лэн]', t:'Вы можете это повторить?', ex:'Ja, gern.', exr:'Да, конечно.', extr:'[я гэрн]'},
+  {w:'Was kostet die Fahrkarte nach Berlin?', p:'[вас ко́-стэт ди фа́р-кар-тэ нах бэр-ли́н]', t:'Сколько стоит билет до Берлина?', ex:'Sie kostet 25 Euro.', exr:'Он стоит 25 евро.', extr:'[зи ко́-стэт фюнф-унт-цва́н-цихь о́й-ро]'},
+  {w:'Wohnen Sie gern in Deutschland?', p:'[во́-нэн зи гэрн ин дойч-лант]', t:'Вам нравится жить в Германии?', ex:'Ja, sehr gern.', exr:'Да, очень нравится.', extr:'[я зэр гэрн]'}
+].forEach(v => CARDS.push({c:'Вопросы', w:v.w, p:v.p, e:'', t:v.t, ex:v.ex, exr:v.exr, extr:v.extr}));
+
+/* СЕМЬЯ (22) */
+[
+  {w:'der Vater', p:'[фа́-тэр]', e:'die Väter', t:'отец', ex:'Mein Vater arbeitet viel.', exr:'Мой отец много работает.', extr:'[майн фа́-тэр а́р-бай-тэт филь]'},
+  {w:'die Mutter', p:'[му́-тэр]', e:'die Mütter', t:'мать', ex:'Meine Mutter kocht gut.', exr:'Моя мама хорошо готовит.', extr:'[ма́й-нэ му́-тэр кохт гут]'},
+  {w:'der Bruder', p:'[бру́-дэр]', e:'die Brüder', t:'брат', ex:'Ich habe einen Bruder.', exr:'У меня есть брат.', extr:'[ихь ха́-бэ а́й-нэн бру́-дэр]'},
+  {w:'die Schwester', p:'[швэ́-стэр]', e:'die Schwestern', t:'сестра', ex:'Meine Schwester ist Ärztin.', exr:'Моя сестра — врач.', extr:'[ма́й-нэ швэ́-стэр ист э́рц-тин]'},
+  {w:'der Sohn', p:'[зон]', e:'die Söhne', t:'сын', ex:'Mein Sohn geht zur Schule.', exr:'Мой сын ходит в школу.', extr:'[майн зон гэйт цур шу́-лэ]'},
+  {w:'die Tochter', p:'[то́х-тэр]', e:'die Töchter', t:'дочь', ex:'Meine Tochter ist fünf.', exr:'Моей дочери пять.', extr:'[ма́й-нэ то́х-тэр ист фюнф]'},
+  {w:'die Familie', p:'[фа-ми́-ли-э]', e:'die Familien', t:'семья', ex:'Meine Familie ist groß.', exr:'Моя семья большая.', extr:'[ма́й-нэ фа-ми́-ли-э ист грос]'},
+  {w:'der Freund', p:'[фройнт]', e:'die Freunde', t:'друг', ex:'Mein Freund heißt Thomas.', exr:'Моего друга зовут Томас.', extr:'[майн фройнт хайст то́-мас]'},
+  {w:'die Freundin', p:'[фро́йн-дин]', e:'die Freundinnen', t:'подруга', ex:'Meine Freundin wohnt in Hamburg.', exr:'Моя подруга живёт в Гамбурге.', extr:'[ма́й-нэ фро́йн-дин вонт ин ха́м-бург]'},
+  {w:'der Lehrer', p:'[ле́-рэр]', e:'die Lehrer', t:'учитель', ex:'Mein Lehrer heißt Herr Müller.', exr:'Моего учителя зовут г-н Мюллер.', extr:'[майн ле́-рэр хайст хэр мю́-лэр]'},
+  {w:'der Arzt', p:'[арцт]', e:'die Ärzte', t:'врач', ex:'Ich gehe zum Arzt.', exr:'Я иду к врачу.', extr:'[ихь гэ́-э цум арцт]'},
+  {w:'der Student', p:'[шту-дэ́нт]', e:'die Studenten', t:'студент', ex:'Ich bin Student.', exr:'Я студент.', extr:'[ихь бин шту-дэ́нт]'},
+  {w:'der Mann', p:'[ман]', e:'die Männer', t:'мужчина', ex:'Der Mann liest eine Zeitung.', exr:'Мужчина читает газету.', extr:'[дэр ман лист а́й-нэ ца́й-тунг]'},
+  {w:'die Frau', p:'[фра́-у]', e:'die Frauen', t:'женщина', ex:'Die Frau arbeitet im Büro.', exr:'Женщина работает в офисе.', extr:'[ди фра́-у а́р-бай-тэт им бю-ро́]'},
+  {w:'das Kind', p:'[кинт]', e:'die Kinder', t:'ребёнок', ex:'Das Kind spielt im Garten.', exr:'Ребёнок играет в саду.', extr:'[дас кинт шпильт им га́р-тэн]'},
+  {w:'der Junge', p:'[ю́н-гэ]', e:'die Jungen', t:'мальчик', ex:'Der Junge spielt Fußball.', exr:'Мальчик играет в футбол.', extr:'[дэр ю́н-гэ шпильт фу́с-баль]'},
+  {w:'das Mädchen', p:'[мэ́д-хэн]', e:'die Mädchen', t:'девочка', ex:'Das Mädchen singt ein Lied.', exr:'Девочка поёт песню.', extr:'[дас мэ́д-хэн зингт айн лит]'},
+  {w:'der Mensch', p:'[мэнш]', e:'die Menschen', t:'человек', ex:'Viele Menschen wohnen hier.', exr:'Многие люди живут здесь.', extr:'[фи́-лэ мэ́н-шэн во́-нэн хир]'},
+  {w:'der Name', p:'[на́-мэ]', e:'die Namen', t:'имя', ex:'Mein Name ist Anna.', exr:'Моё имя Анна.', extr:'[майн на́-мэ ист а́-на]'},
+  {w:'der Beruf', p:'[бэ-ру́ф]', e:'die Berufe', t:'профессия', ex:'Was ist Ihr Beruf?', exr:'Какая у вас профессия?', extr:'[вас ист ир бэ-ру́ф]'},
+  {w:'der Herr', p:'[хэр]', e:'die Herren', t:'господин', ex:'Guten Tag, Herr Schmidt!', exr:'Добрый день, г-н Шмидт!', extr:'[гу́-тэн так хэр шмит]'},
+  {w:'die Dame', p:'[да́-мэ]', e:'die Damen', t:'дама', ex:'Die Dame möchte einen Kaffee.', exr:'Дама хотела бы кофе.', extr:'[ди да́-мэ мё́хь-тэ а́й-нэн ка-фэ́]'}
+].forEach(f => CARDS.push({c:'Семья, люди, профессии', w:f.w, p:f.p, e:f.e, t:f.t, ex:f.ex, exr:f.exr, extr:f.extr}));
+
+/* ДОМ (21) */
+[
+  {w:'das Haus', p:'[хаус]', e:'die Häuser', t:'дом', ex:'Das Haus ist groß.', exr:'Дом большой.', extr:'[дас хаус ист грос]'},
+  {w:'die Wohnung', p:'[во́-нунг]', e:'die Wohnungen', t:'квартира', ex:'Meine Wohnung ist klein.', exr:'Моя квартира маленькая.', extr:'[ма́й-нэ во́-нунг ист клайн]'},
+  {w:'das Zimmer', p:'[ци́-мэр]', e:'die Zimmer', t:'комната', ex:'Das Zimmer ist hell.', exr:'Комната светлая.', extr:'[дас ци́-мэр ист хэль]'},
+  {w:'die Küche', p:'[кю́-хэ]', e:'die Küchen', t:'кухня', ex:'Ich koche in der Küche.', exr:'Я готовлю на кухне.', extr:'[ихь ко́-хэ ин дэр кю́-хэ]'},
+  {w:'das Bad', p:'[бат]', e:'die Bäder', t:'ванная', ex:'Das Bad ist neu.', exr:'Ванная новая.', extr:'[дас бат ист ной]'},
+  {w:'das Schlafzimmer', p:'[шла́ф-ци-мэр]', e:'die Schlafzimmer', t:'спальня', ex:'Das Schlafzimmer ist oben.', exr:'Спальня наверху.', extr:'[дас шла́ф-ци-мэр ист о́-бэн]'},
+  {w:'das Wohnzimmer', p:'[во́н-ци-мэр]', e:'die Wohnzimmer', t:'гостиная', ex:'Wir sitzen im Wohnzimmer.', exr:'Мы сидим в гостиной.', extr:'[вир зи́-цэн им во́н-ци-мэр]'},
+  {w:'der Balkon', p:'[баль-ко́н]', e:'die Balkone', t:'балкон', ex:'Der Balkon ist schön.', exr:'Балкон красивый.', extr:'[дэр баль-ко́н ист шён]'},
+  {w:'der Garten', p:'[га́р-тэн]', e:'die Gärten', t:'сад', ex:'Der Garten ist hinter dem Haus.', exr:'Сад за домом.', extr:'[дэр га́р-тэн ист хи́н-тэр дэм хаус]'},
+  {w:'die Tür', p:'[тюр]', e:'die Türen', t:'дверь', ex:'Mach die Tür zu!', exr:'Закрой дверь!', extr:'[мах ди тюр цу]'},
+  {w:'das Fenster', p:'[фэ́н-стэр]', e:'die Fenster', t:'окно', ex:'Das Fenster ist offen.', exr:'Окно открыто.', extr:'[дас фэ́н-стэр ист о́-фэн]'},
+  {w:'der Tisch', p:'[тиш]', e:'die Tische', t:'стол', ex:'Das Buch liegt auf dem Tisch.', exr:'Книга лежит на столе.', extr:'[дас бух ликт а́уф дэм тиш]'},
+  {w:'der Stuhl', p:'[штуль]', e:'die Stühle', t:'стул', ex:'Der Stuhl ist bequem.', exr:'Стул удобный.', extr:'[дэр штуль ист бэ-квэ́м]'},
+  {w:'das Sofa', p:'[зо́-фа]', e:'die Sofas', t:'диван', ex:'Ich sitze auf dem Sofa.', exr:'Я сижу на диване.', extr:'[ихь зи́-цэ а́уф дэм зо́-фа]'},
+  {w:'das Bett', p:'[бэт]', e:'die Betten', t:'кровать', ex:'Ich schlafe im Bett.', exr:'Я сплю в кровати.', extr:'[ихь шла́-фэ им бэт]'},
+  {w:'der Schrank', p:'[шранк]', e:'die Schränke', t:'шкаф', ex:'Die Kleidung ist im Schrank.', exr:'Одежда в шкафу.', extr:'[ди кла́й-дунг ист им шранк]'},
+  {w:'die Lampe', p:'[ла́м-пэ]', e:'die Lampen', t:'лампа', ex:'Die Lampe ist kaputt.', exr:'Лампа сломана.', extr:'[ди ла́м-пэ ист ка-пу́т]'},
+  {w:'der Kühlschrank', p:'[кю́ль-шранк]', e:'die Kühlschränke', t:'холодильник', ex:'Das Essen ist im Kühlschrank.', exr:'Еда в холодильнике.', extr:'[дас э́-сэн ист им кю́ль-шранк]'},
+  {w:'die Dusche', p:'[ду́-шэ]', e:'die Duschen', t:'душ', ex:'Ich gehe unter die Dusche.', exr:'Я иду в душ.', extr:'[ихь гэ́-э у́н-тэр ди ду́-шэ]'},
+  {w:'die Treppe', p:'[трэ́-пэ]', e:'die Treppen', t:'лестница', ex:'Ich gehe die Treppe hinauf.', exr:'Я поднимаюсь по лестнице.', extr:'[ихь гэ́-э ди трэ́-пэ хи-на́уф]'},
+  {w:'der Schlüssel', p:'[шлю́-сэль]', e:'die Schlüssel', t:'ключ', ex:'Wo ist mein Schlüssel?', exr:'Где мой ключ?', extr:'[во ист майн шлю́-сэль]'}
+].forEach(h => CARDS.push({c:'Дом, квартира, мебель', w:h.w, p:h.p, e:h.e, t:h.t, ex:h.ex, exr:h.exr, extr:h.extr}));
+
+/* ЕДА (24) */
+[
+  {w:'das Brot', p:'[брот]', e:'die Brote', t:'хлеб', ex:'Ich kaufe frisches Brot.', exr:'Я покупаю свежий хлеб.', extr:'[ихь ка́у-фэ фри́-шэс брот]'},
+  {w:'das Brötchen', p:'[брё́т-хэн]', e:'die Brötchen', t:'булочка', ex:'Ich esse ein Brötchen.', exr:'Я ем булочку.', extr:'[ихь э́-сэ айн брё́т-хэн]'},
+  {w:'die Butter', p:'[бу́-тэр]', e:'—', t:'масло', ex:'Butter und Brot, bitte.', exr:'Масло и хлеб, пожалуйста.', extr:'[бу́-тэр унт брот би́-тэ]'},
+  {w:'der Käse', p:'[кэ́-зэ]', e:'—', t:'сыр', ex:'Der Käse ist lecker.', exr:'Сыр вкусный.', extr:'[дэр кэ́-зэ ист ле́-кэр]'},
+  {w:'das Ei', p:'[ай]', e:'die Eier', t:'яйцо', ex:'Ich esse ein Ei.', exr:'Я ем яйцо.', extr:'[ихь э́-сэ айн ай]'},
+  {w:'der Apfel', p:'[а́п-фэль]', e:'die Äpfel', t:'яблоко', ex:'Der Apfel ist rot.', exr:'Яблоко красное.', extr:'[дэр а́п-фэль ист рот]'},
+  {w:'die Banane', p:'[ба-на́-нэ]', e:'die Bananen', t:'банан', ex:'Ich esse gern Bananen.', exr:'Я люблю бананы.', extr:'[ихь э́-сэ гэрн ба-на́-нэн]'},
+  {w:'die Tomate', p:'[то-ма́-тэ]', e:'die Tomaten', t:'помидор', ex:'Tomaten sind gesund.', exr:'Помидоры полезны.', extr:'[то-ма́-тэн зинт гэ-зу́нт]'},
+  {w:'die Kartoffel', p:'[кар-то́-фэль]', e:'die Kartoffeln', t:'картофель', ex:'Ich koche Kartoffeln.', exr:'Я варю картошку.', extr:'[ихь ко́-хэ кар-то́-фэльн]'},
+  {w:'das Gemüse', p:'[гэ-мю́-зэ]', e:'—', t:'овощи', ex:'Gemüse ist gesund.', exr:'Овощи полезны.', extr:'[гэ-мю́-зэ ист гэ-зу́нт]'},
+  {w:'das Obst', p:'[обст]', e:'—', t:'фрукты', ex:'Ich kaufe Obst.', exr:'Я покупаю фрукты.', extr:'[ихь ка́у-фэ обст]'},
+  {w:'die Suppe', p:'[зу́-пэ]', e:'die Suppen', t:'суп', ex:'Die Suppe ist warm.', exr:'Суп тёплый.', extr:'[ди зу́-пэ ист варм]'},
+  {w:'der Salat', p:'[за-ла́т]', e:'die Salate', t:'салат', ex:'Ich esse einen Salat.', exr:'Я ем салат.', extr:'[ихь э́-сэ а́й-нэн за-ла́т]'},
+  {w:'das Wasser', p:'[ва́-сэр]', e:'—', t:'вода', ex:'Ich trinke viel Wasser.', exr:'Я пью много воды.', extr:'[ихь три́н-кэ филь ва́-сэр]'},
+  {w:'der Kaffee', p:'[ка-фэ́]', e:'die Kaffees', t:'кофе', ex:'Einen Kaffee, bitte.', exr:'Кофе, пожалуйста.', extr:'[а́й-нэн ка-фэ́ би́-тэ]'},
+  {w:'der Tee', p:'[тэ]', e:'die Tees', t:'чай', ex:'Tee mit Zucker.', exr:'Чай с сахаром.', extr:'[тэ мит цу́-кэр]'},
+  {w:'die Milch', p:'[мильхь]', e:'—', t:'молоко', ex:'Milch zum Frühstück.', exr:'Молоко на завтрак.', extr:'[мильхь цум фрю́-штюк]'},
+  {w:'das Bier', p:'[бир]', e:'die Biere', t:'пиво', ex:'Ich trinke ein Bier.', exr:'Я пью пиво.', extr:'[ихь три́н-кэ айн бир]'},
+  {w:'der Supermarkt', p:'[зу́-пэр-маркт]', e:'die Supermärkte', t:'супермаркет', ex:'Ich gehe in den Supermarkt.', exr:'Я иду в супермаркет.', extr:'[ихь гэ́-э ин дэн зу́-пэр-маркт]'},
+  {w:'die Bäckerei', p:'[бэ-кэ-ра́й]', e:'die Bäckereien', t:'булочная', ex:'Brot in der Bäckerei.', exr:'Хлеб в булочной.', extr:'[брот ин дэр бэ-кэ-ра́й]'},
+  {w:'die Apotheke', p:'[а-по-тэ́-кэ]', e:'die Apotheken', t:'аптека', ex:'Die Apotheke ist rechts.', exr:'Аптека справа.', extr:'[ди а-по-тэ́-кэ ист рэхьтс]'},
+  {w:'der Preis', p:'[прайс]', e:'die Preise', t:'цена', ex:'Der Preis ist hoch.', exr:'Цена высокая.', extr:'[дэр прайс ист хо]'},
+  {w:'der Euro', p:'[о́й-ро]', e:'die Euro', t:'евро', ex:'Das kostet 10 Euro.', exr:'Это стоит 10 евро.', extr:'[дас ко́-стэт цэн о́й-ро]'},
+  {w:'das Geld', p:'[гэльт]', e:'—', t:'деньги', ex:'Ich habe kein Geld.', exr:'У меня нет денег.', extr:'[ихь ха́-бэ кайн гэльт]'}
+].forEach(e => CARDS.push({c:'Еда, напитки, магазины', w:e.w, p:e.p, e:e.e, t:e.t, ex:e.ex, exr:e.exr, extr:e.extr}));
+
+/* ГОРОД (23) */
+[
+  {w:'die Stadt', p:'[штат]', e:'die Städte', t:'город', ex:'Berlin ist eine große Stadt.', exr:'Берлин — большой город.', extr:'[бэр-ли́н ист а́й-нэ гро́-сэ штат]'},
+  {w:'die Straße', p:'[штра́-сэ]', e:'die Straßen', t:'улица', ex:'Ich wohne in der Goethestraße.', exr:'Я живу на улице Гёте.', extr:'[ихь во́-нэ ин дэр гё́-тэ-штра-сэ]'},
+  {w:'der Platz', p:'[плац]', e:'die Plätze', t:'площадь', ex:'Der Platz ist schön.', exr:'Площадь красивая.', extr:'[дэр плац ист шён]'},
+  {w:'der Bahnhof', p:'[ба́н-хоф]', e:'die Bahnhöfe', t:'вокзал', ex:'Der Bahnhof ist nicht weit.', exr:'Вокзал недалеко.', extr:'[дэр ба́н-хоф ист нихьт вайт]'},
+  {w:'der Flughafen', p:'[флю́к-ха-фэн]', e:'die Flughäfen', t:'аэропорт', ex:'Wir fahren zum Flughafen.', exr:'Мы едем в аэропорт.', extr:'[вир фа́-рэн цум флю́к-ха-фэн]'},
+  {w:'die Post', p:'[пост]', e:'—', t:'почта', ex:'Ich gehe zur Post.', exr:'Я иду на почту.', extr:'[ихь гэ́-э цур пост]'},
+  {w:'die Bank', p:'[банк]', e:'die Banken', t:'банк', ex:'Die Bank öffnet um 9 Uhr.', exr:'Банк открывается в 9.', extr:'[ди банк ё́ф-нэт ум нойн ур]'},
+  {w:'die Schule', p:'[шу́-лэ]', e:'die Schulen', t:'школа', ex:'Die Kinder gehen zur Schule.', exr:'Дети идут в школу.', extr:'[ди ки́н-дэр гэ́-эн цур шу́-лэ]'},
+  {w:'das Kino', p:'[ки́-но]', e:'die Kinos', t:'кинотеатр', ex:'Wir gehen ins Kino.', exr:'Мы идём в кино.', extr:'[вир гэ́-эн инс ки́-но]'},
+  {w:'das Theater', p:'[тэ-а́-тэр]', e:'die Theater', t:'театр', ex:'Das Theater ist voll.', exr:'Театр полный.', extr:'[дас тэ-а́-тэр ист фоль]'},
+  {w:'das Museum', p:'[му-зэ́-ум]', e:'die Museen', t:'музей', ex:'Das Museum ist geschlossen.', exr:'Музей закрыт.', extr:'[дас му-зэ́-ум ист гэ-шло́-сэн]'},
+  {w:'das Restaurant', p:'[рэс-то-ра́н]', e:'die Restaurants', t:'ресторан', ex:'Wir essen im Restaurant.', exr:'Мы едим в ресторане.', extr:'[вир э́-сэн им рэс-то-ра́н]'},
+  {w:'das Café', p:'[ка-фэ́]', e:'die Cafés', t:'кафе', ex:'Wir treffen uns im Café.', exr:'Мы встречаемся в кафе.', extr:'[вир трэ́-фэн унс им ка-фэ́]'},
+  {w:'der Park', p:'[парк]', e:'die Parks', t:'парк', ex:'Ich laufe im Park.', exr:'Я гуляю в парке.', extr:'[ихь ла́у-фэ им парк]'},
+  {w:'das Hotel', p:'[хо-тэ́ль]', e:'die Hotels', t:'отель', ex:'Wir schlafen im Hotel.', exr:'Мы ночуем в отеле.', extr:'[вир шла́-фэн им хо-тэ́ль]'},
+  {w:'der Bus', p:'[бус]', e:'die Busse', t:'автобус', ex:'Ich fahre mit dem Bus.', exr:'Я еду на автобусе.', extr:'[ихь фа́-рэ мит дэм бус]'},
+  {w:'der Zug', p:'[цук]', e:'die Züge', t:'поезд', ex:'Der Zug fährt um 8 Uhr.', exr:'Поезд отправляется в 8.', extr:'[дэр цук фэрт ум ахт ур]'},
+  {w:'die U-Bahn', p:'[у́-бан]', e:'die U-Bahnen', t:'метро', ex:'Ich fahre mit der U-Bahn.', exr:'Я еду на метро.', extr:'[ихь фа́-рэ мит дэр у́-бан]'},
+  {w:'das Auto', p:'[а́у-то]', e:'die Autos', t:'автомобиль', ex:'Mein Auto ist alt.', exr:'Моя машина старая.', extr:'[майн а́у-то ист альт]'},
+  {w:'das Fahrrad', p:'[фа́р-рат]', e:'die Fahrräder', t:'велосипед', ex:'Ich fahre mit dem Fahrrad.', exr:'Я еду на велосипеде.', extr:'[ихь фа́-рэ мит дэм фа́р-рат]'},
+  {w:'das Taxi', p:'[та́к-си]', e:'die Taxis', t:'такси', ex:'Wir nehmen ein Taxi.', exr:'Мы берём такси.', extr:'[вир нэ́-мэн айн та́к-си]'},
+  {w:'die Fahrkarte', p:'[фа́р-кар-тэ]', e:'die Fahrkarten', t:'билет', ex:'Ich kaufe eine Fahrkarte.', exr:'Я покупаю билет.', extr:'[ихь ка́у-фэ а́й-нэ фа́р-кар-тэ]'},
+  {w:'die Adresse', p:'[а-дрэ́-сэ]', e:'die Adressen', t:'адрес', ex:'Wie ist deine Adresse?', exr:'Какой у тебя адрес?', extr:'[ви ист да́й-нэ а-дрэ́-сэ]'}
+].forEach(s => CARDS.push({c:'Город, транспорт, места', w:s.w, p:s.p, e:s.e, t:s.t, ex:s.ex, exr:s.exr, extr:s.extr}));
+
+/* ВРЕМЯ (38) */
+[
+  {w:'der Tag', p:'[так]', e:'die Tage', t:'день', ex:'Guten Tag!', exr:'Добрый день!', extr:'[гу́-тэн так]'},
+  {w:'die Woche', p:'[во́-хэ]', e:'die Wochen', t:'неделя', ex:'Die Woche hat 7 Tage.', exr:'В неделе 7 дней.', extr:'[ди во́-хэ хат зи́-бэн та́-гэ]'},
+  {w:'der Monat', p:'[мо́-нат]', e:'die Monate', t:'месяц', ex:'Der Monat ist zu Ende.', exr:'Месяц закончился.', extr:'[дэр мо́-нат ист цу э́н-дэ]'},
+  {w:'das Jahr', p:'[яр]', e:'die Jahre', t:'год', ex:'Ich bin 25 Jahre alt.', exr:'Мне 25 лет.', extr:'[ихь бин фюнф-унт-цва́н-цихь я́-рэ альт]'},
+  {w:'die Stunde', p:'[шту́н-дэ]', e:'die Stunden', t:'час', ex:'Der Kurs dauert 2 Stunden.', exr:'Курс длится 2 часа.', extr:'[дэр курс да́у-эрт цвай шту́н-дэн]'},
+  {w:'die Minute', p:'[ми-ну́-тэ]', e:'die Minuten', t:'минута', ex:'Warte eine Minute.', exr:'Подожди минуту.', extr:'[ва́р-тэ а́й-нэ ми-ну́-тэ]'},
+  {w:'die Uhr', p:'[ур]', e:'die Uhren', t:'часы', ex:'Es ist zehn Uhr.', exr:'Сейчас 10 часов.', extr:'[эс ист цэн ур]'},
+  {w:'der Morgen', p:'[мо́р-гэн]', e:'die Morgen', t:'утро', ex:'Guten Morgen!', exr:'Доброе утро!', extr:'[гу́-тэн мо́р-гэн]'},
+  {w:'der Abend', p:'[а́-бэнт]', e:'die Abende', t:'вечер', ex:'Guten Abend!', exr:'Добрый вечер!', extr:'[гу́-тэн а́-бэнт]'},
+  {w:'die Nacht', p:'[нахт]', e:'die Nächte', t:'ночь', ex:'Gute Nacht!', exr:'Спокойной ночи!', extr:'[гу́-тэ нахт]'},
+  {w:'der Montag', p:'[мо́н-так]', e:'die Montage', t:'понедельник', ex:'Am Montag habe ich Deutsch.', exr:'В понедельник у меня немецкий.', extr:'[ам мо́н-так ха́-бэ ихь дойч]'},
+  {w:'der Dienstag', p:'[ди́нс-так]', e:'die Dienstage', t:'вторник', ex:'Am Dienstag arbeite ich.', exr:'Во вторник я работаю.', extr:'[ам ди́нс-так а́р-бай-тэ ихь]'},
+  {w:'der Mittwoch', p:'[ми́т-вох]', e:'die Mittwoche', t:'среда', ex:'Am Mittwoch habe ich frei.', exr:'В среду у меня выходной.', extr:'[ам ми́т-вох ха́-бэ ихь фрай]'},
+  {w:'der Donnerstag', p:'[до́-нэрс-так]', e:'die Donnerstage', t:'четверг', ex:'Am Donnerstag habe ich Sport.', exr:'В четверг у меня спорт.', extr:'[ам до́-нэрс-так ха́-бэ ихь шпорт]'},
+  {w:'der Freitag', p:'[фра́й-так]', e:'die Freitage', t:'пятница', ex:'Am Freitag gehe ich ins Kino.', exr:'В пятницу я иду в кино.', extr:'[ам фра́й-так гэ́-э ихь инс ки́-но]'},
+  {w:'der Samstag', p:'[за́мс-так]', e:'die Samstage', t:'суббота', ex:'Am Samstag schlafe ich lange.', exr:'В субботу я долго сплю.', extr:'[ам за́мс-так шла́-фэ ихь ла́н-гэ]'},
+  {w:'der Sonntag', p:'[зо́н-так]', e:'die Sonntage', t:'воскресенье', ex:'Am Sonntag besuche ich Eltern.', exr:'В воскресенье навещаю родителей.', extr:'[ам зо́н-так бэ-зу́-хэ ихь э́ль-тэрн]'},
+  {w:'das Wochenende', p:'[во́-хэн-эн-дэ]', e:'die Wochenenden', t:'выходные', ex:'Am Wochenende habe ich frei.', exr:'На выходных я свободен.', extr:'[ам во́-хэн-эн-дэ ха́-бэ ихь фрай]'},
+  {w:'der Januar', p:'[я́-ну-ар]', e:'—', t:'январь', ex:'Im Januar ist es kalt.', exr:'В январе холодно.', extr:'[им я́-ну-ар ист эс кальт]'},
+  {w:'der Februar', p:'[фэ́-бру-ар]', e:'—', t:'февраль', ex:'Im Februar habe ich Geburtstag.', exr:'В феврале у меня день рождения.', extr:'[им фэ́-бру-ар ха́-бэ ихь гэ-бу́рт-стак]'},
+  {w:'der März', p:'[мэрц]', e:'—', t:'март', ex:'Im März beginnt der Frühling.', exr:'В марте начинается весна.', extr:'[им мэрц бэ-ги́нт дэр фрю́-линг]'},
+  {w:'der April', p:'[ап-ри́ль]', e:'—', t:'апрель', ex:'Im April regnet es oft.', exr:'В апреле часто дождь.', extr:'[им ап-ри́ль рэ́г-нэт эс офт]'},
+  {w:'der Mai', p:'[май]', e:'—', t:'май', ex:'Im Mai ist das Wetter schön.', exr:'В мае погода красивая.', extr:'[им май ист дас вэ́-тэр шён]'},
+  {w:'der Juni', p:'[ю́-ни]', e:'—', t:'июнь', ex:'Im Juni fahre ich in den Urlaub.', exr:'В июне я еду в отпуск.', extr:'[им ю́-ни фа́-рэ ихь ин дэн у́р-лауп]'},
+  {w:'der Juli', p:'[ю́-ли]', e:'—', t:'июль', ex:'Im Juli ist es warm.', exr:'В июле тепло.', extr:'[им ю́-ли ист эс варм]'},
+  {w:'der August', p:'[а́у-густ]', e:'—', t:'август', ex:'Im August schwimme ich oft.', exr:'В августе я часто плаваю.', extr:'[им а́у-густ шви́-мэ ихь офт]'},
+  {w:'der September', p:'[зэп-тэ́м-бэр]', e:'—', t:'сентябрь', ex:'Im September beginnt die Schule.', exr:'В сентябре начинается школа.', extr:'[им зэп-тэ́м-бэр бэ-ги́нт ди шу́-лэ]'},
+  {w:'der Oktober', p:'[ок-то́-бэр]', e:'—', t:'октябрь', ex:'Im Oktober fallen die Blätter.', exr:'В октябре падают листья.', extr:'[им ок-то́-бэр фа́-лэн ди блэ́-тэр]'},
+  {w:'der November', p:'[но-вэ́м-бэр]', e:'—', t:'ноябрь', ex:'Im November ist es neblig.', exr:'В ноябре туманно.', extr:'[им но-вэ́м-бэр ист эс нэ́б-лихь]'},
+  {w:'der Dezember', p:'[дэ-цэ́м-бэр]', e:'—', t:'декабрь', ex:'Im Dezember feiern wir Weihnachten.', exr:'В декабре мы празднуем Рождество.', extr:'[им дэ-цэ́м-бэр фа́й-эрн вир ва́й-нах-тэн]'},
+  {w:'heute', p:'[хо́й-тэ]', e:'наречие', t:'сегодня', ex:'Heute ist Montag.', exr:'Сегодня понедельник.', extr:'[хо́й-тэ ист мо́н-так]'},
+  {w:'morgen', p:'[мо́р-гэн]', e:'наречие', t:'завтра', ex:'Morgen fahre ich nach Berlin.', exr:'Завтра я еду в Берлин.', extr:'[мо́р-гэн фа́-рэ ихь нах бэр-ли́н]'},
+  {w:'gestern', p:'[гэ́-стэрн]', e:'наречие', t:'вчера', ex:'Gestern war ich zu Hause.', exr:'Вчера я был дома.', extr:'[гэ́-стэрн вар ихь цу ха́у-зэ]'},
+  {w:'jetzt', p:'[йецт]', e:'наречие', t:'сейчас', ex:'Jetzt lerne ich Deutsch.', exr:'Сейчас я учу немецкий.', extr:'[йецт ле́р-нэ ихь дойч]'},
+  {w:'immer', p:'[и́-мэр]', e:'наречие', t:'всегда', ex:'Ich bin immer müde.', exr:'Я всегда уставший.', extr:'[ихь бин и́-мэр мю́-дэ]'},
+  {w:'oft', p:'[офт]', e:'наречие', t:'часто', ex:'Ich gehe oft spazieren.', exr:'Я часто гуляю.', extr:'[ихь гэ́-э офт шпа-ци́-рэн]'},
+  {w:'manchmal', p:'[ма́нхь-маль]', e:'наречие', t:'иногда', ex:'Manchmal koche ich.', exr:'Иногда я готовлю.', extr:'[ма́нхь-маль ко́-хэ ихь]'}
+].forEach(z => CARDS.push({c:'Время, дни, месяцы', w:z.w, p:z.p, e:z.e, t:z.t, ex:z.ex, exr:z.exr, extr:z.extr}));
+
+/* ТЕЛО (23) */
+[
+  {w:'der Kopf', p:'[копф]', e:'die Köpfe', t:'голова', ex:'Mein Kopf tut weh.', exr:'У меня болит голова.', extr:'[майн копф тут вэ]'},
+  {w:'das Auge', p:'[а́у-гэ]', e:'die Augen', t:'глаз', ex:'Sie hat blaue Augen.', exr:'У неё голубые глаза.', extr:'[зи хат бла́у-э а́у-гэн]'},
+  {w:'die Nase', p:'[на́-зэ]', e:'die Nasen', t:'нос', ex:'Meine Nase ist verstopft.', exr:'У меня заложен нос.', extr:'[ма́й-нэ на́-зэ ист фэр-што́пфт]'},
+  {w:'der Mund', p:'[мунт]', e:'die Münder', t:'рот', ex:'Mach den Mund auf!', exr:'Открой рот!', extr:'[мах дэн мунт ауф]'},
+  {w:'das Ohr', p:'[ор]', e:'die Ohren', t:'ухо', ex:'Mein Ohr tut weh.', exr:'У меня болит ухо.', extr:'[майн ор тут вэ]'},
+  {w:'der Zahn', p:'[цан]', e:'die Zähne', t:'зуб', ex:'Ich habe Zahnschmerzen.', exr:'У меня болит зуб.', extr:'[ихь ха́-бэ ца́н-шмэр-цэн]'},
+  {w:'der Hals', p:'[хальс]', e:'die Hälse', t:'шея; горло', ex:'Mein Hals tut weh.', exr:'У меня болит горло.', extr:'[майн хальс тут вэ]'},
+  {w:'der Arm', p:'[арм]', e:'die Arme', t:'рука', ex:'Mein Arm ist gebrochen.', exr:'У меня сломана рука.', extr:'[майн арм ист гэ-бро́-хэн]'},
+  {w:'die Hand', p:'[хант]', e:'die Hände', t:'кисть руки', ex:'Wasch dir die Hände!', exr:'Помой руки!', extr:'[ваш дир ди хэ́н-дэ]'},
+  {w:'das Bein', p:'[байн]', e:'die Beine', t:'нога', ex:'Mein Bein tut weh.', exr:'У меня болит нога.', extr:'[майн байн тут вэ]'},
+  {w:'der Fuß', p:'[фус]', e:'die Füße', t:'ступня', ex:'Meine Füße sind kalt.', exr:'У меня холодные ноги.', extr:'[ма́й-нэ фю́-сэ зинт кальт]'},
+  {w:'der Bauch', p:'[баух]', e:'die Bäuche', t:'живот', ex:'Mein Bauch tut weh.', exr:'У меня болит живот.', extr:'[майн баух тут вэ]'},
+  {w:'der Rücken', p:'[рю́-кэн]', e:'die Rücken', t:'спина', ex:'Mein Rücken tut weh.', exr:'У меня болит спина.', extr:'[майн рю́-кэн тут вэ]'},
+  {w:'das Herz', p:'[хэрц]', e:'die Herzen', t:'сердце', ex:'Mein Herz ist gesund.', exr:'Моё сердце здоровое.', extr:'[майн хэрц ист гэ-зу́нт]'},
+  {w:'die Tablette', p:'[та-блэ́-тэ]', e:'die Tabletten', t:'таблетка', ex:'Nehmen Sie diese Tabletten!', exr:'Принимайте эти таблетки!', extr:'[нэ́-мэн зи ди́-зэ та-блэ́-тэн]'},
+  {w:'das Hemd', p:'[хэмт]', e:'die Hemden', t:'рубашка', ex:'Das Hemd ist weiß.', exr:'Рубашка белая.', extr:'[дас хэмт ист вайс]'},
+  {w:'die Hose', p:'[хо́-зэ]', e:'die Hosen', t:'брюки', ex:'Die Hose ist zu lang.', exr:'Брюки слишком длинные.', extr:'[ди хо́-зэ ист цу ланг]'},
+  {w:'die Jacke', p:'[я́-кэ]', e:'die Jacken', t:'куртка', ex:'Zieh die Jacke an!', exr:'Надень куртку!', extr:'[ци ди я́-кэ ан]'},
+  {w:'der Mantel', p:'[ма́н-тэль]', e:'die Mäntel', t:'пальто', ex:'Im Winter trage ich einen Mantel.', exr:'Зимой я ношу пальто.', extr:'[им ви́н-тэр тра́-гэ ихь а́й-нэн ма́н-тэль]'},
+  {w:'das Kleid', p:'[клайт]', e:'die Kleider', t:'платье', ex:'Das Kleid ist schön.', exr:'Платье красивое.', extr:'[дас клайт ист шён]'},
+  {w:'der Schuh', p:'[шу]', e:'die Schuhe', t:'обувь', ex:'Die Schuhe sind neu.', exr:'Туфли новые.', extr:'[ди шу́-э зинт ной]'},
+  {w:'die Brille', p:'[бри́-лэ]', e:'die Brillen', t:'очки', ex:'Ich suche meine Brille.', exr:'Я ищу свои очки.', extr:'[ихь зу́-хэ ма́й-нэ бри́-лэ]'},
+  {w:'das Haar', p:'[хар]', e:'die Haare', t:'волосы', ex:'Sie hat lange Haare.', exr:'У неё длинные волосы.', extr:'[зи хат ла́н-гэ ха́-рэ]'}
+].forEach(k => CARDS.push({c:'Тело, здоровье, одежда', w:k.w, p:k.p, e:k.e, t:k.t, ex:k.ex, exr:k.exr, extr:k.extr}));
+
+/* ПРИЛАГАТЕЛЬНЫЕ (24) */
+[
+  {w:'gut', p:'[гут]', e:'besser · am besten', t:'хороший', ex:'Das Essen ist gut.', exr:'Еда хорошая.', extr:'[дас э́-сэн ист гут]'},
+  {w:'schlecht', p:'[шлехьт]', e:'schlechter · am schlechtesten', t:'плохой', ex:'Das Wetter ist schlecht.', exr:'Погода плохая.', extr:'[дас вэ́-тэр ист шлехьт]'},
+  {w:'groß', p:'[грос]', e:'größer · am größten', t:'большой', ex:'Berlin ist groß.', exr:'Берлин большой.', extr:'[бэр-ли́н ист грос]'},
+  {w:'klein', p:'[клайн]', e:'kleiner · am kleinsten', t:'маленький', ex:'Meine Wohnung ist klein.', exr:'Моя квартира маленькая.', extr:'[ма́й-нэ во́-нунг ист клайн]'},
+  {w:'neu', p:'[ной]', e:'neuer · am neuesten', t:'новый', ex:'Ich habe ein neues Auto.', exr:'У меня новая машина.', extr:'[ихь ха́-бэ айн но́й-эс а́у-то]'},
+  {w:'alt', p:'[альт]', e:'älter · am ältesten', t:'старый', ex:'Mein Handy ist alt.', exr:'Мой телефон старый.', extr:'[майн хэ́н-ди ист альт]'},
+  {w:'jung', p:'[юнг]', e:'jünger · am jüngsten', t:'молодой', ex:'Sie ist noch jung.', exr:'Она ещё молодая.', extr:'[зи ист нох юнг]'},
+  {w:'schön', p:'[шён]', e:'schöner · am schönsten', t:'красивый', ex:'Das Bild ist schön.', exr:'Картина красивая.', extr:'[дас бильт ист шён]'},
+  {w:'teuer', p:'[то́й-эр]', e:'teurer · am teuersten', t:'дорогой', ex:'Das Auto ist zu teuer.', exr:'Машина слишком дорогая.', extr:'[дас а́у-то ист цу то́й-эр]'},
+  {w:'billig', p:'[би́-лихь]', e:'billiger · am billigsten', t:'дешёвый', ex:'Das Brot ist billig.', exr:'Хлеб дешёвый.', extr:'[дас брот ист би́-лихь]'},
+  {w:'schnell', p:'[шнэль]', e:'schneller · am schnellsten', t:'быстрый', ex:'Der Zug ist schnell.', exr:'Поезд быстрый.', extr:'[дэр цук ист шнэль]'},
+  {w:'langsam', p:'[ла́нг-зам]', e:'langsamer · am langsamsten', t:'медленный', ex:'Sprich bitte langsam!', exr:'Говори медленно!', extr:'[шприхь би́-тэ ла́нг-зам]'},
+  {w:'warm', p:'[варм]', e:'wärmer · am wärmsten', t:'тёплый', ex:'Heute ist es warm.', exr:'Сегодня тепло.', extr:'[хо́й-тэ ист эс варм]'},
+  {w:'kalt', p:'[кальт]', e:'kälter · am kältesten', t:'холодный', ex:'Im Winter ist es kalt.', exr:'Зимой холодно.', extr:'[им ви́н-тэр ист эс кальт]'},
+  {w:'glücklich', p:'[глю́к-лихь]', e:'glücklicher · am glücklichsten', t:'счастливый', ex:'Ich bin glücklich.', exr:'Я счастлив.', extr:'[ихь бин глю́к-лихь]'},
+  {w:'traurig', p:'[тра́у-рихь]', e:'trauriger · am traurigsten', t:'грустный', ex:'Warum bist du traurig?', exr:'Почему ты грустный?', extr:'[ва-ру́м бист ду тра́у-рихь]'},
+  {w:'müde', p:'[мю́-дэ]', e:'müder · am müdesten', t:'усталый', ex:'Ich bin müde.', exr:'Я устал.', extr:'[ихь бин мю́-дэ]'},
+  {w:'krank', p:'[кранк]', e:'kränker · am kränksten', t:'больной', ex:'Mein Sohn ist krank.', exr:'Мой сын болен.', extr:'[майн зон ист кранк]'},
+  {w:'gesund', p:'[гэ-зу́нт]', e:'gesünder · am gesündesten', t:'здоровый', ex:'Obst ist gesund.', exr:'Фрукты полезны.', extr:'[обст ист гэ-зу́нт]'},
+  {w:'lecker', p:'[ле́-кэр]', e:'leckerer · am leckersten', t:'вкусный', ex:'Der Kuchen ist lecker.', exr:'Пирог вкусный.', extr:'[дэр ку́-хэн ист ле́-кэр]'},
+  {w:'nett', p:'[нэт]', e:'netter · am nettesten', t:'милый', ex:'Sie ist nett.', exr:'Она милая.', extr:'[зи ист нэт]'},
+  {w:'wichtig', p:'[ви́хь-тихь]', e:'wichtiger · am wichtigsten', t:'важный', ex:'Das ist wichtig.', exr:'Это важно.', extr:'[дас ист ви́хь-тихь]'},
+  {w:'interessant', p:'[ин-тэ-рэ-са́нт]', e:'interessanter · am interessantesten', t:'интересный', ex:'Das Buch ist interessant.', exr:'Книга интересная.', extr:'[дас бух ист ин-тэ-рэ-са́нт]'},
+  {w:'schwierig', p:'[шви́-рихь]', e:'schwieriger · am schwierigsten', t:'трудный', ex:'Die Grammatik ist schwierig.', exr:'Грамматика сложная.', extr:'[ди гра-ма́-тик ист шви́-рихь]'}
+].forEach(a => CARDS.push({c:'Прилагательные', w:a.w, p:a.p, e:a.e, t:a.t, ex:a.ex, exr:a.exr, extr:a.extr}));
+
+/* НАРЕЧИЯ (20) */
+[
+  {w:'hier', p:'[хир]', e:'место', t:'здесь', ex:'Ich wohne hier.', exr:'Я живу здесь.', extr:'[ихь во́-нэ хир]'},
+  {w:'dort', p:'[дорт]', e:'место', t:'там', ex:'Der Bahnhof ist dort.', exr:'Вокзал там.', extr:'[дэр ба́н-хоф ист дорт]'},
+  {w:'links', p:'[линкс]', e:'направление', t:'слева', ex:'Gehen Sie nach links.', exr:'Идите налево.', extr:'[гэ́-эн зи нах линкс]'},
+  {w:'rechts', p:'[рэхьтс]', e:'направление', t:'справа', ex:'Die Bank ist rechts.', exr:'Банк справа.', extr:'[ди банк ист рэхьтс]'},
+  {w:'oben', p:'[о́-бэн]', e:'место', t:'наверху', ex:'Das Schlafzimmer ist oben.', exr:'Спальня наверху.', extr:'[дас шла́ф-ци-мэр ист о́-бэн]'},
+  {w:'unten', p:'[у́н-тэн]', e:'место', t:'внизу', ex:'Die Küche ist unten.', exr:'Кухня внизу.', extr:'[ди кю́-хэ ист у́н-тэн]'},
+  {w:'weit', p:'[вайт]', e:'расстояние', t:'далеко', ex:'Der Bahnhof ist weit.', exr:'Вокзал далеко.', extr:'[дэр ба́н-хоф ист вайт]'},
+  {w:'nah', p:'[на]', e:'расстояние', t:'близко', ex:'Der Supermarkt ist nah.', exr:'Супермаркет близко.', extr:'[дэр зу́-пэр-маркт ист на]'},
+  {w:'schon', p:'[шон]', e:'время', t:'уже', ex:'Ich bin schon fertig.', exr:'Я уже готов.', extr:'[ихь бин шон фэ́р-тихь]'},
+  {w:'noch', p:'[нох]', e:'время', t:'ещё', ex:'Ich habe noch Zeit.', exr:'У меня ещё есть время.', extr:'[ихь ха́-бэ нох цайт]'},
+  {w:'sehr', p:'[зэр]', e:'степень', t:'очень', ex:'Das ist sehr gut.', exr:'Это очень хорошо.', extr:'[дас ист зэр гут]'},
+  {w:'viel', p:'[филь]', e:'количество', t:'много', ex:'Ich arbeite viel.', exr:'Я много работаю.', extr:'[ихь а́р-бай-тэ филь]'},
+  {w:'wenig', p:'[вэ́-нихь]', e:'количество', t:'мало', ex:'Ich habe wenig Zeit.', exr:'У меня мало времени.', extr:'[ихь ха́-бэ вэ́-нихь цайт]'},
+  {w:'nur', p:'[нур]', e:'ограничение', t:'только', ex:'Ich habe nur 10 Euro.', exr:'У меня только 10 евро.', extr:'[ихь ха́-бэ нур цэн о́й-ро]'},
+  {w:'auch', p:'[аух]', e:'дополнение', t:'тоже', ex:'Ich möchte auch einen Kaffee.', exr:'Я тоже хотел бы кофе.', extr:'[ихь мё́хь-тэ аух а́й-нэн ка-фэ́]'},
+  {w:'gern', p:'[гэрн]', e:'отношение', t:'охотно', ex:'Ich trinke gern Tee.', exr:'Я охотно пью чай.', extr:'[ихь три́н-кэ гэрн тэ]'},
+  {w:'vielleicht', p:'[фи-ля́йхьт]', e:'вероятность', t:'может быть', ex:'Vielleicht komme ich.', exr:'Может быть, я приду.', extr:'[фи-ля́йхьт ко́-мэ ихь]'},
+  {w:'natürlich', p:'[на-тю́р-лихь]', e:'уверенность', t:'конечно', ex:'Natürlich helfe ich dir.', exr:'Конечно, я помогу тебе.', extr:'[на-тю́р-лихь хэ́ль-фэ ихь дир]'},
+  {w:'zusammen', p:'[цу-за́-мэн]', e:'образ действия', t:'вместе', ex:'Wir lernen zusammen.', exr:'Мы учимся вместе.', extr:'[вир ле́р-нэн цу-за́-мэн]'},
+  {w:'allein', p:'[а-ля́йн]', e:'образ действия', t:'один', ex:'Ich wohne allein.', exr:'Я живу один.', extr:'[ихь во́-нэ а-ля́йн]'}
+].forEach(a => CARDS.push({c:'Наречия', w:a.w, p:a.p, e:a.e, t:a.t, ex:a.ex, exr:a.exr, extr:a.extr}));
+
+/* СЛУЖЕБНЫЕ (29) */
+[
+  {w:'ich', p:'[ихь]', e:'личное местоимение', t:'я', ex:'Ich bin Anna.', exr:'Я Анна.', extr:'[ихь бин а́-на]'},
+  {w:'du', p:'[ду]', e:'личное местоимение', t:'ты', ex:'Woher kommst du?', exr:'Откуда ты?', extr:'[во-хэ́р комст ду]'},
+  {w:'er', p:'[эр]', e:'личное местоимение', t:'он', ex:'Er ist mein Bruder.', exr:'Он мой брат.', extr:'[эр ист майн бру́-дэр]'},
+  {w:'sie', p:'[зи]', e:'личное местоимение', t:'она; они', ex:'Sie ist meine Schwester.', exr:'Она моя сестра.', extr:'[зи ист ма́й-нэ швэ́-стэр]'},
+  {w:'wir', p:'[вир]', e:'личное местоимение', t:'мы', ex:'Wir lernen zusammen.', exr:'Мы учимся вместе.', extr:'[вир ле́р-нэн цу-за́-мэн]'},
+  {w:'mein', p:'[майн]', e:'притяжательное', t:'мой', ex:'Das ist mein Buch.', exr:'Это моя книга.', extr:'[дас ист майн бух]'},
+  {w:'dein', p:'[дайн]', e:'притяжательное', t:'твой', ex:'Wie ist deine Nummer?', exr:'Какой у тебя номер?', extr:'[ви ист да́й-нэ ну́-мэр]'},
+  {w:'mit', p:'[мит]', e:'предлог + Dativ', t:'с (кем-то)', ex:'Ich fahre mit dem Bus.', exr:'Я еду на автобусе.', extr:'[ихь фа́-рэ мит дэм бус]'},
+  {w:'nach', p:'[нах]', e:'предлог + Dativ', t:'после; в', ex:'Ich fahre nach Berlin.', exr:'Я еду в Берлин.', extr:'[ихь фа́-рэ нах бэр-ли́н]'},
+  {w:'von', p:'[фон]', e:'предлог + Dativ', t:'от, из, о', ex:'Ich komme von der Arbeit.', exr:'Я иду с работы.', extr:'[ихь ко́-мэ фон дэр а́р-байт]'},
+  {w:'zu', p:'[цу]', e:'предлог + Dativ', t:'к, в', ex:'Ich gehe zum Arzt.', exr:'Я иду к врачу.', extr:'[ихь гэ́-э цум арцт]'},
+  {w:'bei', p:'[бай]', e:'предлог + Dativ', t:'у (кого-то)', ex:'Ich wohne bei meinen Eltern.', exr:'Я живу у родителей.', extr:'[ихь во́-нэ бай ма́й-нэн э́ль-тэрн]'},
+  {w:'für', p:'[фюр]', e:'предлог + Akkusativ', t:'для', ex:'Das ist für dich.', exr:'Это для тебя.', extr:'[дас ист фюр дихь]'},
+  {w:'ohne', p:'[о́-нэ]', e:'предлог + Akkusativ', t:'без', ex:'Kaffee ohne Zucker.', exr:'Кофе без сахара.', extr:'[ка-фэ́ о́-нэ цу́-кэр]'},
+  {w:'um', p:'[ум]', e:'предлог + Akkusativ', t:'в (о времени)', ex:'Der Kurs beginnt um 9 Uhr.', exr:'Курс начинается в 9.', extr:'[дэр курс бэ-ги́нт ум нойн ур]'},
+  {w:'in', p:'[ин]', e:'Dativ/Akkusativ', t:'в', ex:'Ich wohne in Berlin.', exr:'Я живу в Берлине.', extr:'[ихь во́-нэ ин бэр-ли́н]'},
+  {w:'auf', p:'[ауф]', e:'Dativ/Akkusativ', t:'на', ex:'Das Buch liegt auf dem Tisch.', exr:'Книга на столе.', extr:'[дас бух ликт а́уф дэм тиш]'},
+  {w:'und', p:'[унт]', e:'союз', t:'и', ex:'Ich trinke Tee und esse Kuchen.', exr:'Я пью чай и ем пирог.', extr:'[ихь три́н-кэ тэ унт э́-сэ ку́-хэн]'},
+  {w:'oder', p:'[о́-дэр]', e:'союз', t:'или', ex:'Tee oder Kaffee?', exr:'Чай или кофе?', extr:'[тэ о́-дэр ка-фэ́]'},
+  {w:'aber', p:'[а́-бэр]', e:'союз', t:'но', ex:'Ich bin müde, aber glücklich.', exr:'Я устал, но счастлив.', extr:'[ихь бин мю́-дэ а́-бэр глю́к-лихь]'},
+  {w:'weil', p:'[вайль]', e:'союз', t:'потому что', ex:'Ich bleibe, weil ich krank bin.', exr:'Я остаюсь, потому что болен.', extr:'[ихь бля́й-бэ вайль ихь кранк бин]'},
+  {w:'wer', p:'[вэр]', e:'вопрос', t:'кто', ex:'Wer ist das?', exr:'Кто это?', extr:'[вэр ист дас]'},
+  {w:'was', p:'[вас]', e:'вопрос', t:'что', ex:'Was ist das?', exr:'Что это?', extr:'[вас ист дас]'},
+  {w:'wo', p:'[во]', e:'вопрос', t:'где', ex:'Wo wohnst du?', exr:'Где ты живёшь?', extr:'[во вонст ду]'},
+  {w:'wann', p:'[ван]', e:'вопрос', t:'когда', ex:'Wann kommst du?', exr:'Когда ты придёшь?', extr:'[ван комст ду]'},
+  {w:'wie', p:'[ви]', e:'вопрос', t:'как', ex:"Wie geht's?", exr:'Как дела?', extr:'[ви гэйтс]'},
+  {w:'warum', p:'[ва-ру́м]', e:'вопрос', t:'почему', ex:'Warum lernst du Deutsch?', exr:'Почему ты учишь немецкий?', extr:'[ва-ру́м лернст ду дойч]'},
+  {w:'nicht', p:'[нихьт]', e:'отрицание', t:'не', ex:'Ich bin nicht müde.', exr:'Я не устал.', extr:'[ихь бин нихьт мю́-дэ]'},
+  {w:'kein', p:'[кайн]', e:'отрицание', t:'никакой', ex:'Ich habe kein Geld.', exr:'У меня нет денег.', extr:'[ихь ха́-бэ кайн гэльт]'}
+].forEach(f => CARDS.push({c:'Служебные слова', w:f.w, p:f.p, e:f.e, t:f.t, ex:f.ex, exr:f.exr, extr:f.extr}));
+
+/* ЧИСЛИТЕЛЬНЫЕ (20) */
+[
+  {w:'eins', p:'[айнс]', e:'1', t:'один', ex:'Ich habe nur eins.', exr:'У меня только один.', extr:'[ихь ха́-бэ нур айнс]'},
+  {w:'zwei', p:'[цвай]', e:'2', t:'два', ex:'Ich habe zwei Kinder.', exr:'У меня двое детей.', extr:'[ихь ха́-бэ цвай ки́н-дэр]'},
+  {w:'drei', p:'[драй]', e:'3', t:'три', ex:'Es ist drei Uhr.', exr:'Три часа.', extr:'[эс ист драй ур]'},
+  {w:'vier', p:'[фир]', e:'4', t:'четыре', ex:'Vier Stühle, bitte.', exr:'Четыре стула, пожалуйста.', extr:'[фир шти́-лэ би́-тэ]'},
+  {w:'fünf', p:'[фюнф]', e:'5', t:'пять', ex:'Das kostet fünf Euro.', exr:'Это стоит 5 евро.', extr:'[дас ко́-стэт фюнф о́й-ро]'},
+  {w:'sechs', p:'[зэкс]', e:'6', t:'шесть', ex:'Ich stehe um sechs auf.', exr:'Я встаю в шесть.', extr:'[ихь штэ́-э ум зэкс ауф]'},
+  {w:'sieben', p:'[зи́-бэн]', e:'7', t:'семь', ex:'Sieben Tage in der Woche.', exr:'Семь дней в неделю.', extr:'[зи́-бэн та́-гэ ин дэр во́-хэ]'},
+  {w:'acht', p:'[ахт]', e:'8', t:'восемь', ex:'Um acht beginnt der Film.', exr:'В восемь начинается фильм.', extr:'[ум ахт бэ-ги́нт дэр фильм]'},
+  {w:'neun', p:'[нойн]', e:'9', t:'девять', ex:'Von neun bis fünf.', exr:'С девяти до пяти.', extr:'[фон нойн бис фюнф]'},
+  {w:'zehn', p:'[цэн]', e:'10', t:'десять', ex:'Zehn Euro, bitte.', exr:'Десять евро, пожалуйста.', extr:'[цэн о́й-ро би́-тэ]'},
+  {w:'elf', p:'[эльф]', e:'11', t:'одиннадцать', ex:'Es ist elf Uhr.', exr:'Одиннадцать часов.', extr:'[эс ист эльф ур]'},
+  {w:'zwölf', p:'[цвёльф]', e:'12', t:'двенадцать', ex:'Mittag ist um zwölf.', exr:'Полдень в двенадцать.', extr:'[ми́-так ист ум цвёльф]'},
+  {w:'zwanzig', p:'[цва́н-цихь]', e:'20', t:'двадцать', ex:'Das kostet zwanzig Euro.', exr:'Это стоит 20 евро.', extr:'[дас ко́-стэт цва́н-цихь о́й-ро]'},
+  {w:'dreißig', p:'[дра́й-сихь]', e:'30', t:'тридцать', ex:'Ich bin dreißig.', exr:'Мне тридцать.', extr:'[ихь бин дра́й-сихь]'},
+  {w:'hundert', p:'[ху́н-дэрт]', e:'100', t:'сто', ex:'Hundert Euro.', exr:'Сто евро.', extr:'[ху́н-дэрт о́й-ро]'},
+  {w:'tausend', p:'[та́у-зэнт]', e:'1000', t:'тысяча', ex:'Zehntausend Euro.', exr:'Десять тысяч евро.', extr:'[цэн-та́у-зэнт о́й-ро]'},
+  {w:'einundzwanzig', p:'[айн-унт-цва́н-цихь]', e:'21', t:'двадцать один', ex:'Ich bin einundzwanzig.', exr:'Мне двадцать один.', extr:'[ихь бин айн-унт-цва́н-цихь]'},
+  {w:'fünfunddreißig', p:'[фюнф-унт-дра́й-сихь]', e:'35', t:'тридцать пять', ex:'Das kostet 35 Euro.', exr:'Это стоит 35 евро.', extr:'[дас ко́-стэт фюнф-унт-дра́й-сихь о́й-ро]'},
+  {w:'erste', p:'[э́р-стэ]', e:'порядковое 1.', t:'первый', ex:'Heute ist der erste Mai.', exr:'Сегодня первое мая.', extr:'[хо́й-тэ ист дэр э́р-стэ май]'},
+  {w:'dritte', p:'[дри́-тэ]', e:'порядковое 3.', t:'третий', ex:'Ich wohne im dritten Stock.', exr:'Я живу на 4-м этаже.', extr:'[ихь во́-нэ им дри́-тэн шток]'}
+].forEach(z => CARDS.push({c:'Числительные', w:z.w, p:z.p, e:z.e, t:z.t, ex:z.ex, exr:z.exr, extr:z.extr}));
+
+/* ФРАЗЫ (30) */
+[
+  {w:'Hallo!', p:'[ха-лё]', e:'приветствие', t:'Привет!', ex:"Hallo, wie geht's?", exr:'Привет, как дела?', extr:'[ха-лё ви гэйтс]'},
+  {w:'Guten Morgen!', p:'[гу́-тэн мо́р-гэн]', e:'приветствие', t:'Доброе утро!', ex:'Guten Morgen!', exr:'Доброе утро!', extr:'[гу́-тэн мо́р-гэн]'},
+  {w:'Guten Tag!', p:'[гу́-тэн так]', e:'приветствие', t:'Добрый день!', ex:'Guten Tag!', exr:'Добрый день!', extr:'[гу́-тэн так]'},
+  {w:'Guten Abend!', p:'[гу́-тэн а́-бэнт]', e:'приветствие', t:'Добрый вечер!', ex:'Guten Abend!', exr:'Добрый вечер!', extr:'[гу́-тэн а́-бэнт]'},
+  {w:'Tschüss!', p:'[чюс]', e:'прощание', t:'Пока!', ex:'Tschüss, bis morgen!', exr:'Пока, до завтра!', extr:'[чюс бис мо́р-гэн]'},
+  {w:'Auf Wiedersehen!', p:'[ауф ви́-дэр-зэ-эн]', e:'прощание', t:'До свидания!', ex:'Auf Wiedersehen!', exr:'До свидания!', extr:'[ауф ви́-дэр-зэ-эн]'},
+  {w:'Bitte', p:'[би́-тэ]', e:'вежливость', t:'Пожалуйста', ex:'Ein Wasser, bitte.', exr:'Воду, пожалуйста.', extr:'[айн ва́-сэр би́-тэ]'},
+  {w:'Danke schön', p:'[да́н-кэ шён]', e:'вежливость', t:'Большое спасибо', ex:'Danke schön!', exr:'Большое спасибо!', extr:'[да́н-кэ шён]'},
+  {w:'Entschuldigung', p:'[энт-шу́ль-ди-гунг]', e:'вежливость', t:'Извините', ex:'Entschuldigung!', exr:'Извините!', extr:'[энт-шу́ль-ди-гунг]'},
+  {w:'Es tut mir leid', p:'[эс тут мир ляйд]', e:'вежливость', t:'Мне жаль', ex:'Es tut mir leid.', exr:'Мне жаль.', extr:'[эс тут мир ляйд]'},
+  {w:'Freut mich!', p:'[фройт михь]', e:'знакомство', t:'Приятно познакомиться!', ex:'Freut mich!', exr:'Приятно познакомиться!', extr:'[фройт михь]'},
+  {w:'Wie bitte?', p:'[ви би́-тэ]', e:'непонимание', t:'Простите?', ex:'Wie bitte?', exr:'Простите?', extr:'[ви би́-тэ]'},
+  {w:'Ich verstehe nicht.', p:'[ихь фэр-штэ́-э нихьт]', e:'непонимание', t:'Я не понимаю.', ex:'Ich verstehe nicht.', exr:'Я не понимаю.', extr:'[ихь фэр-штэ́-э нихьт]'},
+  {w:'Wie sagt man das?', p:'[ви загт ман дас]', e:'непонимание', t:'Как это сказать?', ex:'Wie sagt man das auf Deutsch?', exr:'Как это по-немецки?', extr:'[ви загт ман дас ауф дойч]'},
+  {w:'Können Sie mir helfen?', p:'[кё́-нэн зи мир хэ́ль-фэн]', e:'просьба', t:'Вы можете помочь?', ex:'Können Sie mir helfen?', exr:'Вы можете мне помочь?', extr:'[кё́-нэн зи мир хэ́ль-фэн]'},
+  {w:'Ich hätte gern...', p:'[ихь хэ́-тэ гэрн]', e:'просьба', t:'Я хотел бы...', ex:'Ich hätte gern einen Kaffee.', exr:'Я хотел бы кофе.', extr:'[ихь хэ́-тэ гэрн а́й-нэн ка-фэ́]'},
+  {w:'Ja, gern!', p:'[я гэрн]', e:'согласие', t:'Да, с удовольствием!', ex:'Ja, gern!', exr:'Да, с удовольствием!', extr:'[я гэрн]'},
+  {w:'Einverstanden!', p:'[айн-фэр-шта́н-дэн]', e:'согласие', t:'Договорились!', ex:'Einverstanden!', exr:'Договорились!', extr:'[айн-фэр-шта́н-дэн]'},
+  {w:'Kein Problem.', p:'[кайн про-блэ́м]', e:'согласие', t:'Без проблем.', ex:'Kein Problem.', exr:'Без проблем.', extr:'[кайн про-блэ́м]'},
+  {w:'Nein, danke.', p:'[найн да́н-кэ]', e:'отказ', t:'Нет, спасибо.', ex:'Nein, danke.', exr:'Нет, спасибо.', extr:'[найн да́н-кэ]'},
+  {w:'Leider nicht.', p:'[ля́й-дэр нихьт]', e:'отказ', t:'К сожалению, нет.', ex:'Leider nicht.', exr:'К сожалению, нет.', extr:'[ля́й-дэр нихьт]'},
+  {w:'Das geht nicht.', p:'[дас гэйт нихьт]', e:'отказ', t:'Не получится.', ex:'Das geht nicht.', exr:'Не получится.', extr:'[дас гэйт нихьт]'},
+  {w:'Viel Glück!', p:'[филь глюк]', e:'пожелание', t:'Удачи!', ex:'Viel Glück!', exr:'Удачи!', extr:'[филь глюк]'},
+  {w:'Gute Reise!', p:'[гу́-тэ ра́й-зэ]', e:'пожелание', t:'Хорошей поездки!', ex:'Gute Reise!', exr:'Хорошей поездки!', extr:'[гу́-тэ ра́й-зэ]'},
+  {w:'Gute Besserung!', p:'[гу́-тэ бэ́-сэ-рунг]', e:'пожелание', t:'Выздоравливай!', ex:'Gute Besserung!', exr:'Выздоравливай!', extr:'[гу́-тэ бэ́-сэ-рунг]'},
+  {w:'Herzlichen Glückwunsch!', p:'[хэ́рц-ли-хэн глю́к-вунш]', e:'пожелание', t:'Поздравляю!', ex:'Herzlichen Glückwunsch!', exr:'Поздравляю!', extr:'[хэ́рц-ли-хэн глю́к-вунш]'},
+  {w:'Guten Appetit!', p:'[гу́-тэн а-пэ-ти́т]', e:'за столом', t:'Приятного аппетита!', ex:'Guten Appetit!', exr:'Приятного аппетита!', extr:'[гу́-тэн а-пэ-ти́т]'},
+  {w:'Prost!', p:'[прост]', e:'за столом', t:'За здоровье!', ex:'Prost!', exr:'За здоровье!', extr:'[прост]'},
+  {w:'Ich weiß nicht.', p:'[ихь вайс нихьт]', e:'общее', t:'Я не знаю.', ex:'Ich weiß nicht.', exr:'Я не знаю.', extr:'[ихь вайс нихьт]'},
+  {w:'Alles klar!', p:'[а́-лэс клар]', e:'общее', t:'Всё понятно!', ex:'Alles klar!', exr:'Все понятно!', extr:'[а́-лэс клар]'}
+].forEach(p => CARDS.push({c:'Полезные фразы', w:p.w, p:p.p, e:p.e, t:p.t, ex:p.ex, exr:p.exr, extr:p.extr}));
+
+/* =====================================================
+   ЛОГИКА
+   ===================================================== */
+let currentSpeed = 0.6;
+let currentMode = 'cards';
+let currentFilter = 'all';
+let deck = [];
+let currentIndex = 0;
+let stats = { good: 0, bad: 0, total: 0 };
+let mistakes = [];
+let isFlipped = false;
+let quizAnswered = false;
+let buildAnswered = false;
+let writeAnswered = false;
+let audioCtx = null;
+let timerInterval = null;
+let timerSeconds = 0;
+
+const LS_LEARNED = 'deutschA1_learned';
+const LS_FAVORITES = 'deutschA1_favorites';
+let learnedSet = new Set();
+let favoritesSet = new Set();
+
+function loadProgress() {
+  try {
+    const learned = JSON.parse(localStorage.getItem(LS_LEARNED) || '[]');
+    learnedSet = new Set(learned);
+  } catch(e) { learnedSet = new Set(); }
+  try {
+    const favs = JSON.parse(localStorage.getItem(LS_FAVORITES) || '[]');
+    favoritesSet = new Set(favs);
+  } catch(e) { favoritesSet = new Set(); }
+  updateTopBar();
+}
+function saveProgress() {
+  try {
+    localStorage.setItem(LS_LEARNED, JSON.stringify([...learnedSet]));
+    localStorage.setItem(LS_FAVORITES, JSON.stringify([...favoritesSet]));
+  } catch(e) {}
+  updateTopBar();
+}
+function markLearned(card) { learnedSet.add(card.w); saveProgress(); }
+function isFavorite(card) { return favoritesSet.has(card.w); }
+function toggleFavoriteFor(card) {
+  if (favoritesSet.has(card.w)) favoritesSet.delete(card.w);
+  else favoritesSet.add(card.w);
+  saveProgress();
+}
+function updateTopBar() {
+  document.getElementById('learnedCount').textContent = learnedSet.size;
+  document.getElementById('favCount').textContent = favoritesSet.size;
+  const btn = document.getElementById('favBtn');
+  if (btn && deck[currentIndex]) {
+    btn.classList.toggle('active', isFavorite(deck[currentIndex]));
+    btn.textContent = isFavorite(deck[currentIndex]) ? '★' : '☆';
+  }
+}
+
+function startTimer() {
+  if (timerInterval) return;
+  timerInterval = setInterval(() => {
+    timerSeconds++;
+    const m = Math.floor(timerSeconds / 60);
+    const s = timerSeconds % 60;
+    document.getElementById('timerDisplay').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+  }, 1000);
+}
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+function resetTimer() {
+  stopTimer();
+  timerSeconds = 0;
+  document.getElementById('timerDisplay').textContent = '0:00';
+}
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+const FEMALE_VOICE_NAMES = ['anna','katja','marlene','vicki','petra','helena','google deutsch'];
+const MALE_VOICE_NAMES = ['hans','stefan','klaus','yannick','conrad'];
+let cachedVoices = [];
+function loadVoices() { cachedVoices = window.speechSynthesis.getVoices(); }
+function pickGermanFemaleVoice() {
+  if (!cachedVoices.length) loadVoices();
+  const gv = cachedVoices.filter(v => v.lang === 'de-DE' || v.lang.startsWith('de'));
+  if (!gv.length) return null;
+  for (const name of FEMALE_VOICE_NAMES) {
+    const v = gv.find(g => g.name.toLowerCase().includes(name));
+    if (v) return v;
+  }
+  const nonMale = gv.filter(g => !MALE_VOICE_NAMES.some(m => g.name.toLowerCase().includes(m)));
+  if (nonMale.length) return nonMale[0];
+  return gv[0];
+}
+function pickRussianVoice() {
+  if (!cachedVoices.length) loadVoices();
+  return cachedVoices.find(v => v.lang === 'ru-RU') || cachedVoices.find(v => v.lang.startsWith('ru')) || null;
+}
+function speak(text, btn) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  document.querySelectorAll('.speaking').forEach(b => b.classList.remove('speaking'));
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'de-DE'; u.rate = currentSpeed; u.pitch = 1.15;
+  const voice = pickGermanFemaleVoice();
+  if (voice) u.voice = voice;
+  if (btn) btn.classList.add('speaking');
+  u.onend = () => { if (btn) btn.classList.remove('speaking'); };
+  u.onerror = () => { if (btn) btn.classList.remove('speaking'); };
+  window.speechSynthesis.speak(u);
+}
+function speakRussian(text) {
+  if (!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ru-RU'; u.rate = 0.95; u.pitch = 1.1;
+  const voice = pickRussianVoice();
+  if (voice) u.voice = voice;
+  window.speechSynthesis.speak(u);
+}
+
+function playSound(type) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    if (type === 'correct') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+      osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.25);
+    } else {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(280, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(160, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+      osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.3);
+    }
+  } catch(e) {}
+}
+
+function setSpeed(mode) {
+  currentSpeed = (mode === 'slow') ? 0.6 : 0.9;
+  document.getElementById('speedSlow').classList.toggle('active', mode === 'slow');
+  document.getElementById('speedNormal').classList.toggle('active', mode === 'normal');
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  ['cards','quiz','audio','build','write','fav'].forEach(m => {
+    const el = document.getElementById('mode' + m.charAt(0).toUpperCase() + m.slice(1));
+    if (el) el.classList.toggle('active', m === mode);
+  });
+  document.getElementById('cardsMode').style.display = (mode === 'cards' || mode === 'fav') ? 'block' : 'none';
+  document.getElementById('quizMode').style.display = (mode === 'quiz' || mode === 'audio') ? 'block' : 'none';
+  document.getElementById('buildMode').style.display = (mode === 'build') ? 'block' : 'none';
+  document.getElementById('writeMode').style.display = (mode === 'write') ? 'block' : 'none';
+  resetAll();
+}
+
+function applyFilter() {
+  currentFilter = document.getElementById('filterSelect').value;
+  resetAll();
+}
+
+function resetAll() {
+  let full;
+  if (currentMode === 'fav') {
+    full = CARDS.filter(c => favoritesSet.has(c.w));
+    if (!full.length) {
+      alert('В избранном пока пусто. Отмечайте карточки звёздочкой ⭐');
+      setMode('cards');
+      return;
+    }
+  } else if (currentFilter === 'all') {
+    full = CARDS.slice();
+  } else {
+    full = CARDS.filter(c => c.c === currentFilter);
+  }
+  deck = shuffle(full);
+  currentIndex = 0;
+  stats = { good: 0, bad: 0, total: deck.length };
+  mistakes = [];
+  document.getElementById('finishView').style.display = 'none';
+  document.getElementById('trainerView').style.display = 'block';
+  resetTimer();
+  startTimer();
+  if (currentMode === 'cards' || currentMode === 'fav') showCard();
+  else if (currentMode === 'quiz' || currentMode === 'audio') showQuiz();
+  else if (currentMode === 'build') showBuild();
+  else if (currentMode === 'write') showWrite();
+  updateStats();
+}
+
+function currentCard() { return deck[currentIndex]; }
+
+function showCard() {
+  if (currentIndex >= deck.length) { finishTrainer(); return; }
+  const c = currentCard();
+  document.getElementById('cardWord').textContent = c.w || '';
+  document.getElementById('cardPron').textContent = c.p || '';
+  document.getElementById('cardExtra').textContent = c.e || '';
+  document.getElementById('cardTrans').textContent = c.t || '';
+  document.getElementById('cardExample').innerHTML = `<div class="text">
+    <div class="de">${c.ex || ''}</div>
+    ${c.extr ? `<div class="tr">${c.extr}</div>` : ''}
+    <div class="ru">${c.exr || ''}</div>
+  </div>
+  <button class="speak-mini" onclick="event.stopPropagation(); speak('${(c.ex || '').replace(/'/g, "\\'")}', this);">🔊</button>`;
+  document.getElementById('card').classList.remove('flipped');
+  isFlipped = false;
+  document.getElementById('btnGood').disabled = true;
+  document.getElementById('btnBad').disabled = true;
+  document.getElementById('btnShow').disabled = false;
+  updateTopBar();
+}
+
+function flipCard() {
+  if (!isFlipped) {
+    document.getElementById('card').classList.add('flipped');
+    isFlipped = true;
+    document.getElementById('btnGood').disabled = false;
+    document.getElementById('btnBad').disabled = false;
+    document.getElementById('btnShow').disabled = true;
+    const c = currentCard();
+    speak(c.w, null);
+    if (c.ex) setTimeout(() => speak(c.ex, null), 1200);
+  }
+}
+
+function toggleFavorite() {
+  const c = currentCard();
+  if (!c) return;
+  toggleFavoriteFor(c);
+  updateTopBar();
+}
+
+function answer(known) {
+  if (!isFlipped) return;
+  const c = currentCard();
+  if (known) { stats.good++; markLearned(c); }
+  else { stats.bad++; mistakes.push(c); }
+  currentIndex++;
+  showCard();
+  updateStats();
+}
+
+function showQuiz() {
+  if (currentIndex >= deck.length) { finishTrainer(); return; }
+  quizAnswered = false;
+  const c = currentCard();
+  const isAudio = (currentMode === 'audio');
+  const direction = isAudio ? 'de-ru' : (Math.random() < 0.5 ? 'de-ru' : 'ru-de');
+  window.__quizDirection = direction;
+
+  const qBox = document.getElementById('quizQuestion');
+  qBox.classList.toggle('audio-mode', isAudio);
+
+  if (isAudio) {
+    document.getElementById('quizWord').textContent = '🔊 ? ? ?';
+    document.getElementById('quizPron').textContent = 'Нажми, чтобы услышать ещё раз';
+    qBox.style.cursor = 'pointer';
+    qBox.onclick = () => speak(c.w, null);
+  } else if (direction === 'de-ru') {
+    document.getElementById('quizWord').textContent = c.w;
+    document.getElementById('quizPron').textContent = c.p || '';
+    qBox.onclick = null;
+  } else {
+    document.getElementById('quizWord').textContent = c.t;
+    document.getElementById('quizPron').textContent = 'Выберите перевод на немецком';
+    qBox.onclick = null;
+  }
+
+  let correctAnswer, pool;
+  if (direction === 'de-ru') {
+    correctAnswer = c.t;
+    pool = CARDS.filter(x => x.t !== c.t);
+  } else {
+    correctAnswer = c.w;
+    const sameCat = CARDS.filter(x => x.c === c.c && x.w !== c.w);
+    pool = sameCat.length >= 3 ? sameCat : CARDS.filter(x => x.w !== c.w);
+  }
+  pool = shuffle(pool).slice(0, 3);
+  const options = shuffle([
+    { text: correctAnswer, correct: true },
+    ...pool.map(p => ({ text: direction === 'de-ru' ? p.t : p.w, correct: false }))
+  ]);
+
+  const optBox = document.getElementById('quizOptions');
+  optBox.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-option';
+    btn.textContent = opt.text;
+    btn.dataset.correct = opt.correct ? '1' : '0';
+    btn.onclick = () => checkQuizAnswer(btn, opt.correct);
+    optBox.appendChild(btn);
+  });
+
+  document.getElementById('quizFeedback').textContent = '';
+  document.getElementById('quizFeedback').className = 'quiz-feedback';
+  document.getElementById('btnQuizNext').disabled = true;
+  document.getElementById('btnQuizShow').disabled = false;
+
+  if (isAudio) setTimeout(() => speak(c.w, null), 300);
+}
+
+function revealQuizAnswer() {
+  if (quizAnswered) return;
+  const c = currentCard();
+  quizAnswered = true;
+  document.querySelectorAll('.quiz-option').forEach(el => {
+    el.classList.add('answered');
+    if (el.dataset.correct === '1') el.classList.add('correct');
+  });
+  const direction = window.__quizDirection || 'de-ru';
+  stats.bad++; mistakes.push(c);
+  playSound('wrong');
+  document.getElementById('quizFeedback').textContent = '✗ Правильный ответ выделен зелёным';
+  document.getElementById('quizFeedback').className = 'quiz-feedback wrong';
+  document.getElementById('btnQuizNext').disabled = false;
+  document.getElementById('btnQuizShow').disabled = true;
+  setTimeout(() => {
+    if (direction === 'de-ru') speakRussian(c.t);
+    else speak(c.w, null);
+  }, 400);
+  updateStats();
+}
+
+function checkQuizAnswer(btn, isCorrect) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  const c = currentCard();
+  const direction = window.__quizDirection || 'de-ru';
+
+  document.querySelectorAll('.quiz-option').forEach(el => {
+    el.classList.add('answered');
+    if (el.dataset.correct === '1') el.classList.add('correct');
+  });
+
+  if (isCorrect) {
+    playSound('correct');
+    stats.good++;
+    markLearned(c);
+    document.getElementById('quizFeedback').textContent = '✓ Верно!';
+    document.getElementById('quizFeedback').className = 'quiz-feedback correct';
+  } else {
+    btn.classList.add('wrong');
+    playSound('wrong');
+    setTimeout(() => {
+      if (direction === 'de-ru') speakRussian(c.t);
+      else speak(c.w, null);
+    }, 400);
+    stats.bad++;
+    mistakes.push(c);
+    document.getElementById('quizFeedback').textContent = '✗ Правильный ответ выделен зелёным';
+    document.getElementById('quizFeedback').className = 'quiz-feedback wrong';
+  }
+
+  document.getElementById('btnQuizNext').disabled = false;
+  document.getElementById('btnQuizShow').disabled = true;
+  updateStats();
+}
+
+let buildChosen = [];
+let buildCorrectWords = [];
+
+function showBuild() {
+  if (currentIndex >= deck.length) { finishTrainer(); return; }
+  buildAnswered = false;
+  buildChosen = [];
+  const c = currentCard();
+  document.getElementById('buildRu').textContent = c.exr || '—';
+  document.getElementById('buildHint').textContent = 'Соберите немецкое предложение из слов ниже';
+  document.getElementById('buildFeedback').textContent = '';
+  document.getElementById('buildFeedback').className = 'build-feedback';
+  document.getElementById('btnBuildCheck').disabled = true;
+  document.getElementById('btnBuildNext').disabled = true;
+
+  const sentence = c.ex || '';
+  const words = sentence.replace(/[.,!?]/g, '').split(/\s+/).filter(w => w.length);
+  buildCorrectWords = words.slice();
+  const shuffled = shuffle(words.slice());
+  if (shuffled.join(' ') === words.join(' ') && words.length > 2) {
+    [shuffled[0], shuffled[shuffled.length - 1]] = [shuffled[shuffled.length - 1], shuffled[0]];
+  }
+
+  document.getElementById('buildAnswer').innerHTML = '';
+  const tilesBox = document.getElementById('buildTiles');
+  tilesBox.innerHTML = '';
+  shuffled.forEach((w, i) => {
+    const t = document.createElement('button');
+    t.className = 'build-tile';
+    t.textContent = w;
+    t.dataset.index = i;
+    t.onclick = () => chooseBuildTile(t, w);
+    tilesBox.appendChild(t);
+  });
+}
+
+function chooseBuildTile(tileEl, word) {
+  if (buildAnswered) return;
+  if (tileEl.classList.contains('used')) return;
+  tileEl.classList.add('used');
+  buildChosen.push({ word, tileEl });
+
+  const ans = document.getElementById('buildAnswer');
+  const chip = document.createElement('button');
+  chip.className = 'build-tile chosen';
+  chip.textContent = word;
+  chip.onclick = () => {
+    if (buildAnswered) return;
+    buildChosen = buildChosen.filter(b => b.tileEl !== tileEl);
+    tileEl.classList.remove('used');
+    chip.remove();
+    document.getElementById('btnBuildCheck').disabled = buildChosen.length === 0;
+  };
+  ans.appendChild(chip);
+
+  document.getElementById('btnBuildCheck').disabled = buildChosen.length === 0;
+}
+
+function checkBuild() {
+  if (buildAnswered) return;
+  buildAnswered = true;
+  const c = currentCard();
+  const userSentence = buildChosen.map(b => b.word).join(' ');
+  const target = buildCorrectWords.join(' ');
+
+  if (userSentence === target) {
+    playSound('correct');
+    stats.good++;
+    markLearned(c);
+    document.getElementById('buildFeedback').textContent = '✓ Правильно! ' + (c.ex || '');
+    document.getElementById('buildFeedback').className = 'build-feedback correct';
+    setTimeout(() => speak(c.ex, null), 400);
+  } else {
+    playSound('wrong');
+    stats.bad++;
+    mistakes.push(c);
+    document.getElementById('buildFeedback').innerHTML = '✗ Правильный порядок: <strong>' + target + '</strong>';
+    document.getElementById('buildFeedback').className = 'build-feedback wrong';
+    setTimeout(() => speak(c.ex, null), 600);
+  }
+  document.getElementById('btnBuildCheck').disabled = true;
+  document.getElementById('btnBuildNext').disabled = false;
+  updateStats();
+}
+
+function showWrite() {
+  if (currentIndex >= deck.length) { finishTrainer(); return; }
+  writeAnswered = false;
+  const c = currentCard();
+  document.getElementById('writeRu').textContent = c.t || '—';
+  document.getElementById('writeHint').textContent = 'Введите перевод на немецком';
+  const inp = document.getElementById('writeInput');
+  inp.value = '';
+  inp.className = 'write-input';
+  inp.disabled = false;
+  inp.focus();
+  document.getElementById('writeFeedback').textContent = '';
+  document.getElementById('writeFeedback').className = 'quiz-feedback';
+  document.getElementById('btnWriteCheck').disabled = true;
+  document.getElementById('btnWriteNext').disabled = true;
+}
+
+function onWriteInput() {
+  const inp = document.getElementById('writeInput');
+  document.getElementById('btnWriteCheck').disabled = inp.value.trim().length === 0;
+}
+
+function onWriteKey(e) {
+  if (e.key === 'Enter') {
+    if (writeAnswered) nextItem();
+    else if (!document.getElementById('btnWriteCheck').disabled) checkWrite();
+  }
+}
+
+function normalizeWord(s) {
+  return s.trim().toLowerCase()
+    .replace(/^(der|die|das)\s+/, '')
+    .replace(/[.,!?;:]/g, '')
+    .replace(/ß/g, 'ss')
+    .replace(/\s+/g, ' ');
+}
+
+function checkWrite() {
+  if (writeAnswered) return;
+  writeAnswered = true;
+  const c = currentCard();
+  const inp = document.getElementById('writeInput');
+  const user = normalizeWord(inp.value);
+  const target = normalizeWord(c.w);
+
+  inp.disabled = true;
+  document.getElementById('btnWriteCheck').disabled = true;
+  document.getElementById('btnWriteNext').disabled = false;
+
+  if (user === target) {
+    playSound('correct');
+    stats.good++;
+    markLearned(c);
+    inp.classList.add('correct');
+    document.getElementById('writeFeedback').textContent = '✓ Правильно! ' + c.w;
+    document.getElementById('writeFeedback').className = 'quiz-feedback correct';
+    speak(c.w, null);
+  } else {
+    playSound('wrong');
+    stats.bad++;
+    mistakes.push(c);
+    inp.classList.add('wrong');
+    document.getElementById('writeFeedback').innerHTML = '✗ Правильно: <strong>' + c.w + '</strong>';
+    document.getElementById('writeFeedback').className = 'quiz-feedback wrong';
+    setTimeout(() => speak(c.w, null), 500);
+  }
+  updateStats();
+}
+
+function nextItem() {
+  currentIndex++;
+  if (currentMode === 'cards' || currentMode === 'fav') showCard();
+  else if (currentMode === 'quiz' || currentMode === 'audio') showQuiz();
+  else if (currentMode === 'build') showBuild();
+  else if (currentMode === 'write') showWrite();
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = stats.total;
+  document.getElementById('statGood').textContent = stats.good;
+  document.getElementById('statBad').textContent = stats.bad;
+  document.getElementById('statLeft').textContent = stats.total - (stats.good + stats.bad);
+  const done = stats.good + stats.bad;
+  const pct = stats.total ? (done / stats.total) * 100 : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function finishTrainer() {
+  stopTimer();
+  document.getElementById('trainerView').style.display = 'none';
+  document.getElementById('finishView').style.display = 'block';
+  const done = stats.good + stats.bad;
+  const pct = done ? Math.round((stats.good / done) * 100) : 0;
+  document.getElementById('finalScore').textContent = pct + '%';
+  document.getElementById('finalTime').textContent = formatTime(timerSeconds);
+  const txt = document.getElementById('finalText');
+  if (pct >= 90) txt.textContent = 'Отличный результат! 🎉';
+  else if (pct >= 70) txt.textContent = 'Хорошо! Повтори сложные карточки. 👍';
+  else if (pct >= 50) txt.textContent = 'Неплохо, но стоит потренироваться. 💪';
+  else txt.textContent = 'Не расстраивайся — повтори ошибки. 📚';
+}
+
+function retryMistakes() {
+  if (!mistakes.length) { alert('Ошибок нет — всё выучено! 🎉'); return; }
+  deck = shuffle(mistakes);
+  currentIndex = 0;
+  stats = { good: 0, bad: 0, total: deck.length };
+  mistakes = [];
+  document.getElementById('finishView').style.display = 'none';
+  document.getElementById('trainerView').style.display = 'block';
+  resetTimer();
+  startTimer();
+  if (currentMode === 'cards' || currentMode === 'fav') showCard();
+  else if (currentMode === 'quiz' || currentMode === 'audio') showQuiz();
+  else if (currentMode === 'build') showBuild();
+  else if (currentMode === 'write') showWrite();
+  updateStats();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  if (currentMode === 'cards' || currentMode === 'fav') {
+    if (e.code === 'Space') { e.preventDefault(); flipCard(); }
+    if (e.code === 'ArrowRight' && isFlipped) { e.preventDefault(); answer(true); }
+    if (e.code === 'ArrowLeft' && isFlipped) { e.preventDefault(); answer(false); }
+  }
+});
+
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+loadProgress();
+resetAll();
+</script>
+
+</body>
+</html>

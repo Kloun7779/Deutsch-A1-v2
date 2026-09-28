@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Колода 3 — Еда, напитки, магазины (A1)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Verdana, Arial, sans-serif;
+    background: linear-gradient(135deg, #f7971e, #ffd200);
+    min-height: 100vh;
+    padding: 40px 20px 80px;
+    color: #2b2b2b;
+    letter-spacing: 0.3px;
+  }
+
+  h1 {
+    text-align: center; color: #fff; margin-bottom: 8px;
+    font-size: 2rem; text-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+
+  .subtitle {
+    text-align: center; color: #fff8e0; margin-bottom: 12px;
+    font-size: 1rem; line-height: 1.5;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .controls {
+    max-width: 1300px; margin: 0 auto 25px;
+    display: flex; justify-content: center; align-items: center;
+    gap: 14px; flex-wrap: wrap;
+  }
+
+  .speed-toggle {
+    display: inline-flex; background: rgba(255,255,255,0.25);
+    border-radius: 30px; padding: 5px;
+    border: 1px solid rgba(255,255,255,0.4);
+  }
+
+  .speed-toggle button {
+    padding: 9px 20px; border: none; background: transparent;
+    color: #7a4a00; font-size: 0.95rem; font-weight: 600;
+    border-radius: 25px; cursor: pointer; transition: all 0.2s;
+    font-family: inherit;
+  }
+
+  .speed-toggle button.active {
+    background: #fff; color: #a35a00;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  .btn-player {
+    padding: 11px 22px; border: none;
+    background: linear-gradient(135deg, #4caf50, #2e7d32);
+    color: #fff; font-size: 0.95rem; font-weight: 700;
+    border-radius: 30px; cursor: pointer;
+    transition: transform 0.15s;
+    box-shadow: 0 4px 12px rgba(76,175,80,0.4);
+    font-family: inherit;
+  }
+
+  .btn-player:hover { transform: translateY(-2px); }
+  .btn-player:active { transform: scale(0.97); }
+
+  .legend {
+    display: flex; justify-content: center; gap: 16px;
+    flex-wrap: wrap; margin-bottom: 25px;
+    font-size: 0.9rem; color: #fff;
+  }
+
+  .legend span {
+    padding: 6px 14px; background: rgba(255,255,255,0.25);
+    border-radius: 20px; display: inline-flex;
+    align-items: center; gap: 6px;
+  }
+
+  .legend .dot {
+    width: 12px; height: 12px;
+    border-radius: 50%; display: inline-block;
+  }
+
+  .section-title {
+    max-width: 1300px; margin: 35px auto 18px;
+    color: #fff; font-size: 1.25rem; font-weight: 700;
+    padding-bottom: 8px;
+    border-bottom: 2px solid rgba(255,255,255,0.4);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .section-title:first-of-type { margin-top: 0; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 22px; max-width: 1300px; margin: 0 auto;
+  }
+
+  .card {
+    perspective: 1200px; height: 430px; cursor: pointer;
+  }
+
+  .card-inner {
+    position: relative; width: 100%; height: 100%;
+    transition: transform 0.7s; transform-style: preserve-3d;
+  }
+
+  .card.flipped .card-inner { transform: rotateY(180deg); }
+
+  .card-face {
+    position: absolute; width: 100%; height: 100%;
+    backface-visibility: hidden; border-radius: 18px;
+    padding: 22px; display: flex; flex-direction: column;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.25); overflow-y: auto;
+  }
+
+  .front { background: #fdf6e3; border-top: 6px solid #f7971e; }
+
+  .art-der { color: #1565c0; font-weight: 700; }
+  .art-die { color: #c62828; font-weight: 700; }
+  .art-das { color: #2e7d32; font-weight: 700; }
+
+  .front .word {
+    font-size: 1.5rem; font-weight: 700; color: #a35a00;
+    text-align: center; margin-bottom: 8px; line-height: 1.35;
+  }
+
+  .front .plural {
+    text-align: center; font-size: 0.9rem;
+    color: #c98a3a; margin-bottom: 10px; line-height: 1.5;
+  }
+
+  .front .pron {
+    text-align: center; color: #8b5a00;
+    font-size: 1rem; margin-bottom: 10px;
+    line-height: 1.6; letter-spacing: 0.5px; font-weight: 600;
+  }
+
+  .speak-row {
+    display: flex; justify-content: center; gap: 12px;
+    margin: 10px 0 12px; flex-wrap: wrap;
+  }
+
+  .speak-btn {
+    background: #f7971e; color: #fff; border: none;
+    border-radius: 50%; width: 46px; height: 46px;
+    font-size: 1.2rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s, background 0.15s;
+    box-shadow: 0 3px 10px rgba(247,151,30,0.4);
+  }
+
+  .speak-btn:hover { background: #e08614; transform: scale(1.08); }
+  .speak-btn:active { transform: scale(0.95); }
+  .speak-btn.speaking { animation: pulse 0.9s infinite; }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 3px 10px rgba(247,151,30,0.4); }
+    50% { box-shadow: 0 3px 20px rgba(247,151,30,1); }
+  }
+
+  .front .hint {
+    text-align: center; font-size: 0.8rem; color: #999;
+    margin-top: auto; padding-top: 10px;
+    border-top: 1px dashed #f5dba8;
+  }
+
+  .back {
+    background: linear-gradient(160deg, #a35a00, #d97706);
+    color: #fff; transform: rotateY(180deg);
+    border-top: 6px solid #ffd200; justify-content: center;
+  }
+
+  .back .translation {
+    font-size: 1.35rem; font-weight: 700;
+    text-align: center; margin-bottom: 14px;
+    color: #ffd166; line-height: 1.4;
+  }
+
+  .back .label {
+    font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 1.2px; color: #ffe9b0;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    padding-bottom: 5px;
+  }
+
+  .back .example {
+    font-size: 0.95rem; line-height: 1.55;
+    margin-bottom: 12px; display: flex;
+    align-items: flex-start; gap: 10px;
+  }
+
+  .back .example .text { flex: 1; }
+
+  .back .example .de {
+    font-weight: 600; color: #fff;
+    display: block; margin-bottom: 3px;
+  }
+
+  .back .example .tr {
+    color: #ffd166; font-size: 0.88rem;
+    display: block; margin-bottom: 3px;
+    letter-spacing: 0.4px; font-style: italic;
+  }
+
+  .back .example .ru {
+    color: #ffe9b0; font-size: 0.88rem;
+    display: block; line-height: 1.5;
+  }
+
+  .speak-mini {
+    background: rgba(255,255,255,0.18); color: #fff;
+    border: none; border-radius: 50%;
+    width: 34px; height: 34px; font-size: 0.9rem;
+    cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, transform 0.15s;
+  }
+
+  .speak-mini:hover { background: rgba(255,255,255,0.35); transform: scale(1.1); }
+  .speak-mini:active { transform: scale(0.95); }
+  .speak-mini.speaking { animation: pulse 0.9s infinite; }
+
+  .player-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(40,25,0,0.92); z-index: 1000;
+    padding: 30px 20px; overflow-y: auto;
+    backdrop-filter: blur(6px);
+  }
+
+  .player-overlay.active { display: flex; align-items: center; justify-content: center; }
+
+  .player-box {
+    background: linear-gradient(160deg, #a35a00, #d97706);
+    border-radius: 24px; padding: 35px 30px;
+    max-width: 520px; width: 100%;
+    text-align: center; color: #fff;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .player-box h2 {
+    font-size: 1.5rem; margin-bottom: 8px; color: #ffd166;
+  }
+
+  .player-box .sub {
+    color: #ffe9b0; font-size: 0.9rem; margin-bottom: 22px;
+  }
+
+  .player-word {
+    font-size: 2rem; font-weight: 700; color: #fff;
+    margin: 20px 0 8px; min-height: 60px; line-height: 1.3;
+  }
+
+  .player-pron {
+    font-size: 1.05rem; color: #ffd166;
+    font-style: italic; margin-bottom: 6px; min-height: 24px;
+  }
+
+  .player-trans {
+    font-size: 1.1rem; color: #ffe9b0;
+    margin-bottom: 20px; min-height: 26px;
+  }
+
+  .player-progress {
+    font-size: 0.9rem; color: #ffd88a; margin-bottom: 12px;
+  }
+
+  .player-bar {
+    width: 100%; height: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px; overflow: hidden; margin-bottom: 22px;
+  }
+
+  .player-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ffd166, #f7971e);
+    width: 0%; transition: width 0.4s;
+  }
+
+  .player-buttons {
+    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+  }
+
+  .player-buttons button {
+    padding: 12px 18px; border: none;
+    border-radius: 12px; font-size: 0.95rem;
+    font-weight: 700; cursor: pointer;
+    transition: transform 0.15s;
+    font-family: inherit; min-width: 90px;
+  }
+
+  .player-buttons button:active { transform: scale(0.96); }
+
+  .p-play { background: #4caf50; color: #fff; }
+  .p-pause { background: #ff9800; color: #fff; }
+  .p-next { background: #2196f3; color: #fff; }
+  .p-close { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+
+  @media (max-width: 480px) {
+    .card { height: 460px; }
+    h1 { font-size: 1.4rem; }
+    .front .word { font-size: 1.25rem; }
+    .player-word { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🍞 Колода 3 — Еда, напитки, магазины</h1>
+<p class="subtitle">Уровень A1 · Нажми на карточку, чтобы перевернуть 🔄</p>
+
+<div class="controls">
+  <div class="speed-toggle">
+    <button id="speedSlow" class="active" onclick="setSpeed('slow')">🐢 Медленно</button>
+    <button id="speedNormal" onclick="setSpeed('normal')">🐇 Обычно</button>
+  </div>
+  <button class="btn-player" onclick="openPlayer()">🎧 Режим звука</button>
+</div>
+
+<div class="legend">
+  <span><span class="dot" style="background:#1565c0;"></span> der — мужской</span>
+  <span><span class="dot" style="background:#c62828;"></span> die — женский</span>
+  <span><span class="dot" style="background:#2e7d32;"></span> das — средний</span>
+</div>
+
+<!-- ==================== ХЛЕБ / МОЛОЧНОЕ ==================== -->
+<div class="section-title">🥖 Хлеб и молочное</div>
+<div class="grid">
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="das Brot">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-das">das</span> Brot</div>
+        <div class="plural">die Brote</div>
+        <div class="pron">[брот]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('das Brot', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">хлеб</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich kaufe frisches Brot.</div>
+            <div class="tr">[ихь ка́у-фэ фри́-шэс брот]</div>
+            <div class="ru">Я покупаю свежий хлеб.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich kaufe frisches Brot.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="das Brötchen">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-das">das</span> Brötchen</div>
+        <div class="plural">die Brötchen</div>
+        <div class="pron">[брё́т-хэн]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('das Brötchen', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">булочка</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich esse ein Brötchen.</div>
+            <div class="tr">[ихь э́-сэ айн брё́т-хэн]</div>
+            <div class="ru">Я ем булочку.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich esse ein Brötchen.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="die Butter">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-die">die</span> Butter</div>
+        <div class="pron">[бу́-тэр]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('die Butter', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">масло (сливочное)</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Butter und Brot, bitte.</div>
+            <div class="tr">[бу́-тэр унт брот би́-тэ]</div>
+            <div class="ru">Масло и хлеб, пожалуйста.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Butter und Brot, bitte.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Käse">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Käse</div>
+        <div class="pron">[кэ́-зэ]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Käse', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">сыр</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Der Käse ist lecker.</div>
+            <div class="tr">[дэр кэ́-зэ ист ле́-кэр]</div>
+            <div class="ru">Сыр вкусный.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Der Käse ist lecker.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="die Wurst">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-die">die</span> Wurst</div>
+        <div class="plural">die Würste</div>
+        <div class="pron">[вурст]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('die Wurst', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">колбаса</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich kaufe Wurst und Käse.</div>
+            <div class="tr">[ихь ка́у-фэ вурст унт кэ́-зэ]</div>
+            <div class="ru">Я покупаю колбасу и сыр.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich kaufe Wurst und Käse.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="das Ei">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-das">das</span> Ei</div>
+        <div class="plural">die Eier</div>
+        <div class="pron">[ай]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('das Ei', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">яйцо</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich esse ein Ei zum Frühstück.</div>
+            <div class="tr">[ихь э́-сэ айн ай цум фрю́-штюк]</div>
+            <div class="ru">Я ем яйцо на завтрак.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich esse ein Ei zum Frühstück.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="die Milch">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-die">die</span> Milch</div>
+        <div class="pron">[мильхь]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('die Milch', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">молоко</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Milch zum Frühstück, bitte.</div>
+            <div class="tr">[мильхь цум фрю́-штюк би́-тэ]</div>
+            <div class="ru">Молоко на завтрак, пожалуйста.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Milch zum Frühstück, bitte.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="das Fleisch">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-das">das</span> Fleisch</div>
+        <div class="pron">[фляйш]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('das Fleisch', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">мясо</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich esse kein Fleisch.</div>
+            <div class="tr">[ихь э́-сэ кайн фляйш]</div>
+            <div class="ru">Я не ем мясо.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich esse kein Fleisch.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Fisch">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Fisch</div>
+        <div class="plural">die Fische</div>
+        <div class="pron">[фиш]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Fisch', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">рыба</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Freitags esse ich Fisch.</div>
+            <div class="tr">[фра́й-такс э́-сэ ихь фиш]</div>
+            <div class="ru">По пятницам я ем рыбу.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Freitags esse ich Fisch.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== ФРУКТЫ / ОВОЩИ ==================== -->
+<div class="section-title">🍎 Фрукты и овощи</div>
+<div class="grid">
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Apfel">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Apfel</div>
+        <div class="plural">die Äpfel</div>
+        <div class="pron">[а́п-фэль]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Apfel', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">яблоко</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Der Apfel ist rot.</div>
+            <div class="tr">[дэр а́п-фэль ист рот]</div>
+            <div class="ru">Яблоко красное.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Der Apfel ist rot.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="die Banane">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-die">die</span> Banane</div>
+        <div class="plural">die Bananen</div>
+        <div class="pron">[ба-на́-нэ]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('die Banane', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">банан</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich esse gern Bananen.</div>
+            <div class="tr">[ихь э́-сэ гэрн ба-на́-нэн]</div>
+            <div class="ru">Я люблю бананы.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich esse gern Bananen.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="die Orange">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-die">die</span> Orange</div>
+        <div class="plural">die Orangen</div>
+        <div class="pron">[о-ра́н-жэ]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('die Orange', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">апельсин</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Die Orange ist süß.</div>
+            <div class="tr">[ди о-ра́н-жэ ист зюс]</div>
+            <div class="ru">Апельсин сладкий.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Die Orange ist süß.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="die Tomate">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-die">die</span> Tomate</div>
+        <div class="plural">die Tomaten</div>
+        <div class="pron">[то-ма́-тэ]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('die Tomate', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">помидор</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Tomaten sind gesund.</div>
+            <div class="tr">[то-ма́-тэн зинт гэ-зу́нт]</div>
+            <div class="ru">Помидоры полезны.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Tomaten sind gesund.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="die Kartoffel">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-die">die</span> Kartoffel</div>
+        <div class="plural">die Kartoffeln</div>
+        <div class="pron">[кар-то́-фэль]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('die Kartoffel', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">картофель</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich koche Kartoffeln.</div>
+            <div class="tr">[ихь ко́-хэ кар-то́-фэльн]</div>
+            <div class="ru">Я варю картошку.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich koche Kartoffeln.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="das Gemüse">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-das">das</span> Gemüse</div>
+        <div class="pron">[гэ-мю́-зэ]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('das Gemüse', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">овощи</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Gemüse ist gesund.</div>
+            <div class="tr">[гэ-мю́-зэ ист гэ-зу́нт]</div>
+            <div class="ru">Овощи полезны.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Gemüse ist gesund.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="das Obst">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-das">das</span> Obst</div>
+        <div class="pron">[обст]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('das Obst', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">фрукты</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich kaufe Obst auf dem Markt.</div>
+            <div class="tr">[ихь ка́у-фэ обст а́уф дэм маркт]</div>
+            <div class="ru">Я покупаю фрукты на рынке.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich kaufe Obst auf dem Markt.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== БЛЮДА / ПРИПРАВЫ ==================== -->
+<div class="section-title">🍽 Блюда и приправы</div>
+<div class="grid">
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Reis">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Reis</div>
+        <div class="pron">[райс]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Reis', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">рис</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich esse Reis mit Gemüse.</div>
+            <div class="tr">[ихь э́-сэ райс мит гэ-мю́-зэ]</div>
+            <div class="ru">Я ем рис с овощами.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich esse Reis mit Gemüse.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="die Nudeln">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-die">die</span> Nudeln <span style="font-size:0.85rem;color:#c98a3a;">(мн. ч.)</span></div>
+        <div class="pron">[ну́-дэльн]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('die Nudeln', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">макароны, лапша</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich koche Nudeln.</div>
+            <div class="tr">[ихь ко́-хэ ну́-дэльн]</div>
+            <div class="ru">Я готовлю макароны.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich koche Nudeln.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="die Suppe">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-die">die</span> Suppe</div>
+        <div class="plural">die Suppen</div>
+        <div class="pron">[зу́-пэ]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('die Suppe', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">суп</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Die Suppe ist warm.</div>
+            <div class="tr">[ди зу́-пэ ист варм]</div>
+            <div class="ru">Суп тёплый.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Die Suppe ist warm.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Salat">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Salat</div>
+        <div class="plural">die Salate</div>
+        <div class="pron">[за-ла́т]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Salat', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">салат</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich esse einen Salat.</div>
+            <div class="tr">[ихь э́-сэ а́й-нэн за-ла́т]</div>
+            <div class="ru">Я ем салат.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich esse einen Salat.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Kuchen">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Kuchen</div>
+        <div class="plural">die Kuchen</div>
+        <div class="pron">[ку́-хэн]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Kuchen', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">пирог, торт</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Der Kuchen schmeckt sehr gut.</div>
+            <div class="tr">[дэр ку́-хэн шмэкт зэр гут]</div>
+            <div class="ru">Пирог очень вкусный.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Der Kuchen schmeckt sehr gut.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Zucker">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Zucker</div>
+        <div class="pron">[цу́-кэр]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Zucker', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">сахар</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Kaffee ohne Zucker, bitte.</div>
+            <div class="tr">[ка-фэ́ о́-нэ цу́-кэр би́-тэ]</div>
+            <div class="ru">Кофе без сахара, пожалуйста.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Kaffee ohne Zucker, bitte.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="das Salz">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-das">das</span> Salz</div>
+        <div class="pron">[зальц]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('das Salz', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">соль</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Gib mir bitte das Salz.</div>
+            <div class="tr">[гип мир би́-тэ дас зальц]</div>
+            <div class="ru">Дай мне, пожалуйста, соль.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Gib mir bitte das Salz.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== НАПИТКИ ==================== -->
+<div class="section-title">☕ Напитки</div>
+<div class="grid">
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="das Wasser">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-das">das</span> Wasser</div>
+        <div class="pron">[ва́-сэр]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('das Wasser', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">вода</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich trinke viel Wasser.</div>
+            <div class="tr">[ихь три́н-кэ филь ва́-сэр]</div>
+            <div class="ru">Я пью много воды.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich trinke viel Wasser.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Kaffee">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Kaffee</div>
+        <div class="plural">die Kaffees</div>
+        <div class="pron">[ка-фэ́]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Kaffee', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">кофе</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Einen Kaffee, bitte.</div>
+            <div class="tr">[а́й-нэн ка-фэ́ би́-тэ]</div>
+            <div class="ru">Кофе, пожалуйста.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Einen Kaffee, bitte.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Tee">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Tee</div>
+        <div class="plural">die Tees</div>
+        <div class="pron">[тэ]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Tee', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">чай</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Tee mit Zucker, bitte.</div>
+            <div class="tr">[тэ мит цу́-кэр би́-тэ]</div>
+            <div class="ru">Чай с сахаром, пожалуйста.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Tee mit Zucker, bitte.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Saft">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Saft</div>
+        <div class="plural">die Säfte</div>
+        <div class="pron">[зафт]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Saft', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">сок</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich trinke Orangensaft.</div>
+            <div class="tr">[ихь три́н-кэ о-ра́н-жэн-зафт]</div>
+            <div class="ru">Я пью апельсиновый сок.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich trinke Orangensaft.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="das Bier">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-das">das</span> Bier</div>
+        <div class="plural">die Biere</div>
+        <div class="pron">[бир]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('das Bier', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">пиво</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich trinke ein Bier.</div>
+            <div class="tr">[ихь три́н-кэ айн бир]</div>
+            <div class="ru">Я пью пиво.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich trinke ein Bier.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Wein">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Wein</div>
+        <div class="plural">die Weine</div>
+        <div class="pron">[вайн]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Wein', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">вино</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ein Glas Wein, bitte.</div>
+            <div class="tr">[айн глас вайн би́-тэ]</div>
+            <div class="ru">Бокал вина, пожалуйста.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ein Glas Wein, bitte.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== МАГАЗИНЫ ==================== -->
+<div class="section-title">🏪 Магазины и покупки</div>
+<div class="grid">
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Supermarkt">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Supermarkt</div>
+        <div class="plural">die Supermärkte</div>
+        <div class="pron">[зу́-пэр-маркт]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Supermarkt', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">супермаркет</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich gehe in den Supermarkt.</div>
+            <div class="tr">[ихь гэ́-э ин дэн зу́-пэр-маркт]</div>
+            <div class="ru">Я иду в супермаркет.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich gehe in den Supermarkt.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Markt">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Markt</div>
+        <div class="plural">die Märkte</div>
+        <div class="pron">[маркт]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Markt', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">рынок</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Wir kaufen Obst auf dem Markt.</div>
+            <div class="tr">[вир ка́у-фэн обст а́уф дэм маркт]</div>
+            <div class="ru">Мы покупаем фрукты на рынке.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Wir kaufen Obst auf dem Markt.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="die Bäckerei">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-die">die</span> Bäckerei</div>
+        <div class="plural">die Bäckereien</div>
+        <div class="pron">[бэ-кэ-ра́й]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('die Bäckerei', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">булочная, пекарня</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich kaufe Brot in der Bäckerei.</div>
+            <div class="tr">[ихь ка́у-фэ брот ин дэр бэ-кэ-ра́й]</div>
+            <div class="ru">Я покупаю хлеб в булочной.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich kaufe Brot in der Bäckerei.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="die Apotheke">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-die">die</span> Apotheke</div>
+        <div class="plural">die Apotheken</div>
+        <div class="pron">[а-по-тэ́-кэ]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('die Apotheke', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">аптека</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Die Apotheke ist dort rechts.</div>
+            <div class="tr">[ди а-по-тэ́-кэ ист дорт рэхьтс]</div>
+            <div class="ru">Аптека там справа.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Die Apotheke ist dort rechts.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Preis">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Preis</div>
+        <div class="plural">die Preise</div>
+        <div class="pron">[прайс]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Preis', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">цена</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Der Preis ist zu hoch.</div>
+            <div class="tr">[дэр прайс ист цу хо]</div>
+            <div class="ru">Цена слишком высокая.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Der Preis ist zu hoch.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="der Euro">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-der">der</span> Euro</div>
+        <div class="plural">die Euro</div>
+        <div class="pron">[о́й-ро]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('der Euro', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">евро</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Das kostet zehn Euro.</div>
+            <div class="tr">[дас ко́-стэт цэн о́й-ро]</div>
+            <div class="ru">Это стоит десять евро.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Das kostet zehn Euro.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('flipped')" data-speak="das Geld">
+    <div class="card-inner">
+      <div class="card-face front">
+        <div class="word"><span class="art-das">das</span> Geld</div>
+        <div class="pron">[гэльт]</div>
+        <div class="speak-row">
+          <button class="speak-btn" onclick="event.stopPropagation(); speak('das Geld', this);">🔊</button>
+        </div>
+        <div class="hint">нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face back">
+        <div class="translation">деньги</div>
+        <div class="label">Пример</div>
+        <div class="example">
+          <div class="text">
+            <div class="de">Ich habe kein Geld dabei.</div>
+            <div class="tr">[ихь ха́-бэ кайн гэльт да-ба́й]</div>
+            <div class="ru">У меня с собой нет денег.</div>
+          </div>
+          <button class="speak-mini" onclick="event.stopPropagation(); speak('Ich habe kein Geld dabei.', this);">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== ПЛЕЕР ==================== -->
+<div class="player-overlay" id="playerOverlay">
+  <div class="player-box">
+    <h2>🎧 Режим звука</h2>
+    <p class="sub">Слушай: немецкое слово → русский перевод</p>
+
+    <div class="player-word" id="playerWord">—</div>
+    <div class="player-pron" id="playerPron"></div>
+    <div class="player-trans" id="playerTrans"></div>
+
+    <div class="player-progress" id="playerProgress">0 / 0</div>
+    <div class="player-bar"><div class="player-bar-fill" id="playerBarFill"></div></div>
+
+    <div class="player-buttons">
+      <button class="p-play" onclick="playerPlay()">▶ Играть</button>
+      <button class="p-pause" onclick="playerPause()">⏸ Пауза</button>
+      <button class="p-next" onclick="playerNext()">⏭ Дальше</button>
+      <button class="p-close" onclick="closePlayer()">✕ Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentSpeed = 0.6;
+
+const FEMALE_VOICE_NAMES = ['anna','katja','marlene','vicki','petra','helena','google deutsch'];
+const MALE_VOICE_NAMES = ['hans','stefan','klaus','yannick','conrad'];
+
+let cachedVoices = [];
+
+function loadVoices() {
+  cachedVoices = window.speechSynthesis.getVoices();
+}
+
+function pickGermanFemaleVoice() {
+  if (!cachedVoices.length) loadVoices();
+  const germanVoices = cachedVoices.filter(v => v.lang === 'de-DE' || v.lang.startsWith('de'));
+  if (!germanVoices.length) return null;
+  for (const name of FEMALE_VOICE_NAMES) {
+    const v = germanVoices.find(g => g.name.toLowerCase().includes(name));
+    if (v) return v;
+  }
+  const nonMale = germanVoices.filter(g =>
+    !MALE_VOICE_NAMES.some(m => g.name.toLowerCase().includes(m))
+  );
+  if (nonMale.length) return nonMale[0];
+  return germanVoices[0];
+}
+
+function pickRussianVoice() {
+  if (!cachedVoices.length) loadVoices();
+  return cachedVoices.find(v => v.lang === 'ru-RU')
+      || cachedVoices.find(v => v.lang.startsWith('ru'))
+      || null;
+}
+
+function speak(text, btn) {
+  if (!('speechSynthesis' in window)) {
+    alert('Ваш браузер не поддерживает озвучку. Попробуйте Chrome, Safari или Edge.');
+    return;
+  }
+  window.speechSynthesis.cancel();
+  document.querySelectorAll('.speak-btn.speaking, .speak-mini.speaking').forEach(b => {
+    b.classList.remove('speaking');
+  });
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'de-DE';
+  u.rate = currentSpeed;
+  u.pitch = 1.15;
+  u.volume = 1;
+  const voice = pickGermanFemaleVoice();
+  if (voice) u.voice = voice;
+  if (btn) btn.classList.add('speaking');
+  u.onend = () => { if (btn) btn.classList.remove('speaking'); };
+  u.onerror = () => { if (btn) btn.classList.remove('speaking'); };
+  window.speechSynthesis.speak(u);
+}
+
+function setSpeed(mode) {
+  currentSpeed = (mode === 'slow') ? 0.6 : 0.9;
+  document.getElementById('speedSlow').classList.toggle('active', mode === 'slow');
+  document.getElementById('speedNormal').classList.toggle('active', mode === 'normal');
+}
+
+let playerWords = [];
+let playerIndex = 0;
+let playerPlaying = false;
+let playerTimer = null;
+
+function collectWords() {
+  const cards = document.querySelectorAll('.card[data-speak]');
+  return Array.from(cards).map(c => c.getAttribute('data-speak'));
+}
+
+function openPlayer() {
+  playerWords = collectWords();
+  playerIndex = 0;
+  document.getElementById('playerOverlay').classList.add('active');
+  updatePlayerUI();
+}
+
+function closePlayer() {
+  playerPlaying = false;
+  clearTimeout(playerTimer);
+  window.speechSynthesis.cancel();
+  document.getElementById('playerOverlay').classList.remove('active');
+}
+
+function updatePlayerUI() {
+  const total = playerWords.length;
+  if (playerIndex >= total) {
+    document.getElementById('playerWord').textContent = 'Готово! 🎉';
+    document.getElementById('playerPron').textContent = '';
+    document.getElementById('playerTrans').textContent = '';
+    document.getElementById('playerProgress').textContent = total + ' / ' + total;
+    document.getElementById('playerBarFill').style.width = '100%';
+    return;
+  }
+  const word = playerWords[playerIndex];
+  const card = Array.from(document.querySelectorAll('.card[data-speak]')).find(c => c.getAttribute('data-speak') === word);
+  document.getElementById('playerWord').textContent = word;
+  document.getElementById('playerProgress').textContent = (playerIndex + 1) + ' / ' + total;
+  document.getElementById('playerBarFill').style.width = ((playerIndex + 1) / total * 100) + '%';
+  if (card) {
+    const pron = card.querySelector('.front .pron');
+    const trans = card.querySelector('.back .translation');
+    document.getElementById('playerPron').textContent = pron ? pron.textContent : '';
+    document.getElementById('playerTrans').textContent = trans ? trans.textContent : '';
+  }
+}
+
+function playerPlay() {
+  if (playerIndex >= playerWords.length) playerIndex = 0;
+  playerPlaying = true;
+  playCurrentWord();
+}
+
+function playCurrentWord() {
+  if (!playerPlaying) return;
+  if (playerIndex >= playerWords.length) {
+    playerPlaying = false;
+    updatePlayerUI();
+    return;
+  }
+  updatePlayerUI();
+  const word = playerWords[playerIndex];
+  const card = Array.from(document.querySelectorAll('.card[data-speak]')).find(c => c.getAttribute('data-speak') === word);
+  let translation = '';
+  if (card) {
+    const transEl = card.querySelector('.back .translation');
+    if (transEl) translation = transEl.textContent.trim();
+  }
+  window.speechSynthesis.cancel();
+
+  const uDe = new SpeechSynthesisUtterance(word);
+  uDe.lang = 'de-DE';
+  uDe.rate = currentSpeed;
+  uDe.pitch = 1.15;
+  const voice = pickGermanFemaleVoice();
+  if (voice) uDe.voice = voice;
+
+  uDe.onend = () => {
+    if (!playerPlaying) return;
+    if (translation) {
+      playerTimer = setTimeout(() => {
+        if (!playerPlaying) return;
+        const uRu = new SpeechSynthesisUtterance(translation);
+        uRu.lang = 'ru-RU';
+        uRu.rate = 0.9;
+        uRu.pitch = 1.1;
+        const ruVoice = pickRussianVoice();
+        if (ruVoice) uRu.voice = ruVoice;
+        uRu.onend = () => {
+          if (!playerPlaying) return;
+          playerTimer = setTimeout(() => {
+            if (!playerPlaying) return;
+            playerIndex++;
+            playCurrentWord();
+          }, 1000);
+        };
+        window.speechSynthesis.speak(uRu);
+      }, 500);
+    } else {
+      playerTimer = setTimeout(() => {
+        if (!playerPlaying) return;
+        playerIndex++;
+        playCurrentWord();
+      }, 1500);
+    }
+  };
+  window.speechSynthesis.speak(uDe);
+}
+
+function playerPause() {
+  playerPlaying = false;
+  clearTimeout(playerTimer);
+  window.speechSynthesis.cancel();
+}
+
+function playerNext() {
+  playerIndex++;
+  if (playerIndex >= playerWords.length) {
+    playerPlaying = false;
+    updatePlayerUI();
+    return;
+  }
+  if (playerPlaying) {
+    clearTimeout(playerTimer);
+    playCurrentWord();
+  } else {
+    updatePlayerUI();
+  }
+}
+
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Режим звука — плеер для немецких слов A1</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Verdana, Arial, sans-serif;
+    background: linear-gradient(135deg, #2a0845, #6441a5);
+    min-height: 100vh;
+    padding: 40px 20px 60px;
+    color: #fff;
+    letter-spacing: 0.3px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.9rem;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #d4c4ff;
+    font-size: 0.95rem;
+    margin-bottom: 30px;
+    line-height: 1.5;
+  }
+
+  /* Панель управления */
+  .controls {
+    max-width: 640px;
+    margin: 0 auto 22px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .speed-toggle {
+    display: inline-flex;
+    background: rgba(255,255,255,0.12);
+    border-radius: 30px;
+    padding: 4px;
+    border: 1px solid rgba(255,255,255,0.25);
+  }
+
+  .speed-toggle button {
+    padding: 7px 16px;
+    border: none;
+    background: transparent;
+    color: #d4c4ff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+
+  .speed-toggle button.active {
+    background: #fff;
+    color: #2a0845;
+  }
+
+  select.deck-select {
+    padding: 10px 16px;
+    border-radius: 30px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    max-width: 280px;
+  }
+
+  select.deck-select option {
+    background: #2a0845;
+    color: #fff;
+  }
+
+  /* Плеер */
+  .player {
+    max-width: 520px;
+    margin: 0 auto;
+    background: linear-gradient(160deg, rgba(0,0,0,0.35), rgba(0,0,0,0.15));
+    border-radius: 24px;
+    padding: 34px 28px 28px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.15);
+    text-align: center;
+  }
+
+  .deck-name {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #ffd166;
+    font-weight: 700;
+    margin-bottom: 18px;
+    min-height: 20px;
+  }
+
+  .word-display {
+    font-size: 2.1rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 12px 0 10px;
+    min-height: 60px;
+    line-height: 1.25;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .pron-display {
+    font-size: 1.05rem;
+    color: #ffd166;
+    font-style: italic;
+    margin-bottom: 10px;
+    min-height: 24px;
+  }
+
+  .trans-display {
+    font-size: 1.1rem;
+    color: #d4c4ff;
+    margin-bottom: 26px;
+    min-height: 28px;
+  }
+
+  .progress-info {
+    font-size: 0.88rem;
+    color: #b8a8dd;
+    margin-bottom: 10px;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ffd166, #a044ff);
+    width: 0%;
+    transition: width 0.4s;
+  }
+
+  .player-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .player-buttons button {
+    padding: 14px 20px;
+    border: none;
+    border-radius: 14px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s;
+    font-family: inherit;
+    min-width: 100px;
+  }
+
+  .player-buttons button:active { transform: scale(0.96); }
+  .player-buttons button:disabled { opacity: 0.4; cursor: default; }
+
+  .p-play {
+    background: #4caf50;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(76,175,80,0.4);
+  }
+
+  .p-pause {
+    background: #ff9800;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(255,152,0,0.4);
+  }
+
+  .p-next {
+    background: #2196f3;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(33,150,243,0.4);
+  }
+
+  .p-stop {
+    background: #ff5252;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(255,82,82,0.4);
+  }
+
+  .p-back {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.3);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Настройки */
+  .settings-row {
+    max-width: 520px;
+    margin: 22px auto 0;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #b8a8dd;
+  }
+
+  .settings-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .settings-row input[type="checkbox"] {
+    accent-color: #a044ff;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+
+  /* Информация */
+  .info {
+    max-width: 520px;
+    margin: 30px auto 0;
+    padding: 16px 20px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    font-size: 0.85rem;
+    color: #d4c4ff;
+    line-height: 1.6;
+    text-align: center;
+  }
+
+  .info strong { color: #ffd166; }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 1.4rem; }
+    .word-display { font-size: 1.5rem; }
+    .player { padding: 26px 18px 22px; }
+    .player-buttons button { padding: 12px 14px; font-size: 0.85rem; min-width: 70px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🎧 Режим звука</h1>
+<p class="subtitle">Слушай слова подряд · Учи на слух · Без карточек</p>
+
+<!-- Верхняя панель -->
+<div class="controls">
+  <select class="deck-select" id="deckSelect" onchange="changeDeck()">
+    <option value="all">🎵 Все слова (~340)</option>
+    <option value="Глаголы">⚡ Глаголы (44)</option>
+    <option value="Вопросы">💬 Вопросы (40)</option>
+    <option value="Семья, люди, профессии">👨‍👩‍👧 Семья (50)</option>
+    <option value="Дом, квартира, мебель">🏠 Дом (32)</option>
+    <option value="Еда, напитки, магазины">🍞 Еда (36)</option>
+    <option value="Город, транспорт, места">🏙️ Город (34)</option>
+    <option value="Время, дни, месяцы">🕐 Время (38)</option>
+    <option value="Тело, здоровье, одежда">💪 Тело (34)</option>
+    <option value="Прилагательные">🎨 Прилагательные (42)</option>
+    <option value="Наречия">🧭 Наречия (34)</option>
+    <option value="Служебные слова">🧩 Служебные (50)</option>
+    <option value="Числительные">🔢 Числительные (34)</option>
+    <option value="Полезные фразы">💬 Фразы (40)</option>
+  </select>
+
+  <div class="speed-toggle">
+    <button id="speedSlow" class="active" onclick="setSpeed('slow')">🐢 Медленно</button>
+    <button id="speedNormal" onclick="setSpeed('normal')">🐇 Обычно</button>
+  </div>
+</div>
+
+<!-- Плеер -->
+<div class="player">
+  <div class="deck-name" id="deckName">— выберите колоду —</div>
+
+  <div class="word-display" id="wordDisplay">Готов к воспроизведению</div>
+  <div class="pron-display" id="pronDisplay"></div>
+  <div class="trans-display" id="transDisplay"></div>
+
+  <div class="progress-info" id="progressInfo">0 / 0</div>
+  <div class="progress-bar"><div class="progress-bar-fill" id="progressFill"></div></div>
+
+  <div class="player-buttons">
+    <button class="p-play" id="playBtn" onclick="play()">▶ Играть</button>
+    <button class="p-pause" id="pauseBtn" onclick="pause()" disabled>⏸ Пауза</button>
+    <button class="p-next" id="nextBtn" onclick="next()">⏭ Дальше</button>
+    <button class="p-stop" id="stopBtn" onclick="stop()" disabled>⏹ Стоп</button>
+    <a href="index.html" class="p-back">⌂ Меню</a>
+  </div>
+</div>
+
+<!-- Настройки -->
+<div class="settings-row">
+  <label>
+    <input type="checkbox" id="showTranslation" checked onchange="updateDisplay()">
+    Показывать перевод
+  </label>
+  &nbsp;
+  <label>
+    <input type="checkbox" id="autoNext" checked>
+    Автопереход
+  </label>
+</div>
+
+<div class="info">
+  <strong>💡 Совет:</strong> выберите колоду → нажмите <strong>▶ Играть</strong> → слушайте слова подряд с переводом. 
+  Можно свернуть браузер и учить на слух: на прогулке, лёжа, в дороге.
+</div>
+
+<script>
+/* =====================================================
+   БАЗА СЛОВ (короткая — только для аудио)
+   Формат: { c: категория, w: слово, p: произношение, t: перевод }
+   ===================================================== */
+
+const AUDIO_CARDS = [];
+
+/* Глаголы */
+[
+  {w:'sein', p:'[зайн]', t:'быть'},
+  {w:'haben', p:'[ха́-бэн]', t:'иметь'},
+  {w:'werden', p:'[вэ́р-дэн]', t:'становиться'},
+  {w:'können', p:'[кё́-нэн]', t:'мочь'},
+  {w:'müssen', p:'[мю́-сэн]', t:'быть должным'},
+  {w:'wollen', p:'[во́-лэн]', t:'хотеть'},
+  {w:'sollen', p:'[зо́-лэн]', t:'быть должным (совет)'},
+  {w:'dürfen', p:'[дю́р-фэн]', t:'иметь разрешение'},
+  {w:'mögen', p:'[мё́-гэн]', t:'любить'},
+  {w:'möchten', p:'[мё́хь-тэн]', t:'хотел бы'},
+  {w:'gehen', p:'[гэ́-эн]', t:'идти'},
+  {w:'kommen', p:'[ко́-мэн]', t:'приходить'},
+  {w:'machen', p:'[ма́-хэн]', t:'делать'},
+  {w:'sprechen', p:'[шпрэ́-хэн]', t:'говорить'},
+  {w:'lesen', p:'[ле́-зэн]', t:'читать'},
+  {w:'schreiben', p:'[шра́й-бэн]', t:'писать'},
+  {w:'essen', p:'[э́-сэн]', t:'есть'},
+  {w:'trinken', p:'[три́н-кэн]', t:'пить'},
+  {w:'schlafen', p:'[шла́-фэн]', t:'спать'},
+  {w:'arbeiten', p:'[а́р-бай-тэн]', t:'работать'},
+  {w:'lernen', p:'[ле́р-нэн]', t:'учить'},
+  {w:'verstehen', p:'[фэр-штэ́-эн]', t:'понимать'},
+  {w:'fahren', p:'[фа́-рэн]', t:'ехать'},
+  {w:'kaufen', p:'[ка́у-фэн]', t:'покупать'},
+  {w:'sehen', p:'[зэ́-эн]', t:'видеть'},
+  {w:'hören', p:'[хё́-э-рэн]', t:'слышать'},
+  {w:'wohnen', p:'[во́-нэн]', t:'жить'},
+  {w:'spielen', p:'[шпи́-лэн]', t:'играть'},
+  {w:'geben', p:'[ге́-бэн]', t:'давать'},
+  {w:'nehmen', p:'[не́-мэн]', t:'брать'},
+  {w:'heißen', p:'[ха́й-сэн]', t:'зваться'},
+  {w:'sagen', p:'[за́-гэн]', t:'говорить'},
+  {w:'fragen', p:'[фра́-гэн]', t:'спрашивать'},
+  {w:'brauchen', p:'[бра́у-хэн]', t:'нуждаться'},
+  {w:'finden', p:'[фи́н-дэн]', t:'находить'},
+  {w:'suchen', p:'[зу́-хэн]', t:'искать'},
+  {w:'helfen', p:'[хэ́ль-фэн]', t:'помогать'},
+  {w:'bleiben', p:'[бля́й-бэн]', t:'оставаться'},
+  {w:'aufstehen', p:'[а́уф-штэ-эн]', t:'вставать'},
+  {w:'einkaufen', p:'[а́йн-кау-фэн]', t:'делать покупки'},
+  {w:'anrufen', p:'[а́н-ру-фэн]', t:'звонить'},
+  {w:'anfangen', p:'[а́н-фан-гэн]', t:'начинать'},
+  {w:'aufhören', p:'[а́уф-хё-рэн]', t:'прекращать'},
+  {w:'mitkommen', p:'[ми́т-ко-мэн]', t:'идти с кем-то'}
+].forEach(g => AUDIO_CARDS.push({c:'Глаголы', w:g.w, p:g.p, t:g.t}));
+
+/* Вопросы */
+[
+  {w:'Wie geht es dir?', p:'[ви гэйт эс дир]', t:'Как дела?'},
+  {w:'Wie heißen Sie?', p:'[ви ха́й-сэн зи]', t:'Как Вас зовут?'},
+  {w:'Wie heißt du?', p:'[ви хайст ду]', t:'Как тебя зовут?'},
+  {w:'Woher kommen Sie?', p:'[во-хэ́р ко́-мэн зи]', t:'Откуда Вы?'},
+  {w:'Wo wohnen Sie?', p:'[во во́-нэн зи]', t:'Где Вы живёте?'},
+  {w:'Wie alt bist du?', p:'[ви альт бист ду]', t:'Сколько тебе лет?'},
+  {w:'Was machst du beruflich?', p:'[вас махст ду бэ-ру́ф-лихь]', t:'Кем работаешь?'},
+  {w:'Wann hast du Geburtstag?', p:'[ван хаст ду гэ-бу́рт-стак]', t:'Когда день рождения?'},
+  {w:'Was ist das?', p:'[вас ист дас]', t:'Что это?'},
+  {w:'Wie viel kostet das?', p:'[ви филь ко́-стэт дас]', t:'Сколько стоит?'},
+  {w:'Wo ist der Bahnhof?', p:'[во ист дэр ба́н-хоф]', t:'Где вокзал?'},
+  {w:'Was möchten Sie trinken?', p:'[вас мё́хь-тэн зи три́н-кэн]', t:'Что будете пить?'},
+  {w:'Was isst du gern?', p:'[вас ист ду гэрн]', t:'Что ты любишь есть?'},
+  {w:'Wie ist das Wetter heute?', p:'[ви ист дас вэ́-тэр хо́й-тэ]', t:'Какая погода?'},
+  {w:'Wie kommen Sie zur Arbeit?', p:'[ви ко́-мэн зи цур а́р-байт]', t:'Как добираетесь?'},
+  {w:'Hast du Geschwister?', p:'[хаст ду гэ-шви́-стэр]', t:'Есть братья/сёстры?'},
+  {w:'Hast du Kinder?', p:'[хаст ду ки́н-дэр]', t:'Есть дети?'},
+  {w:'Bist du verheiratet?', p:'[бист ду фэр-ха́й-ра-тэт]', t:'Ты женат/замужем?'},
+  {w:'Was ist dein Hobby?', p:'[вас ист дайн хо́б-би]', t:'Какое хобби?'},
+  {w:'Wie viele Sprachen sprichst du?', p:'[ви фи́-лэ шпра́-хэн шприхьст ду]', t:'Сколько языков?'},
+  {w:'Wann hast du Zeit?', p:'[ван хаст ду цайт]', t:'Когда есть время?'},
+  {w:'Wo warst du gestern?', p:'[во варст ду гэ́-стэрн]', t:'Где был вчера?'},
+  {w:'Was hast du am Wochenende gemacht?', p:'[вас хаст ду ам во́-хэн-эн-дэ гэ-ма́хт]', t:'Что делал на выходных?'},
+  {w:'Seit wann lernst du Deutsch?', p:'[зайт ван лернст ду дойч]', t:'С каких пор учишь немецкий?'},
+  {w:'Wie spät ist es?', p:'[ви шпэт ист эс]', t:'Который час?'},
+  {w:'Kann ich mit Karte zahlen?', p:'[кан ихь мит ка́р-тэ ца́-лэн]', t:'Можно картой?'},
+  {w:'Kannst du mir helfen?', p:'[канст ду мир хэ́ль-фэн]', t:'Можешь помочь?'},
+  {w:'Können Sie das wiederholen?', p:'[кё́-нэн зи дас ви-дэр-хо́-лэн]', t:'Можете повторить?'},
+  {w:'Was kostet die Fahrkarte nach Berlin?', p:'[вас ко́-стэт ди фа́р-кар-тэ нах бэр-ли́н]', t:'Сколько билет до Берлина?'},
+  {w:'Wohnen Sie gern in Deutschland?', p:'[во́-нэн зи гэрн ин дойч-лант]', t:'Нравится в Германии?'}
+].forEach(v => AUDIO_CARDS.push({c:'Вопросы', w:v.w, p:v.p, t:v.t}));
+
+/* Остальные — с указанием категории */
+const OTHER = [
+  /* Семья */
+  {c:'Семья, люди, профессии', w:'der Vater', p:'[фа́-тэр]', t:'отец'},
+  {c:'Семья, люди, профессии', w:'die Mutter', p:'[му́-тэр]', t:'мать'},
+  {c:'Семья, люди, профессии', w:'der Bruder', p:'[бру́-дэр]', t:'брат'},
+  {c:'Семья, люди, профессии', w:'die Schwester', p:'[швэ́-стэр]', t:'сестра'},
+  {c:'Семья, люди, профессии', w:'der Sohn', p:'[зон]', t:'сын'},
+  {c:'Семья, люди, профессии', w:'die Tochter', p:'[то́х-тэр]', t:'дочь'},
+  {c:'Семья, люди, профессии', w:'die Familie', p:'[фа-ми́-ли-э]', t:'семья'},
+  {c:'Семья, люди, профессии', w:'der Freund', p:'[фройнт]', t:'друг'},
+  {c:'Семья, люди, профессии', w:'die Freundin', p:'[фро́йн-дин]', t:'подруга'},
+  {c:'Семья, люди, профессии', w:'der Lehrer', p:'[ле́-рэр]', t:'учитель'},
+  {c:'Семья, люди, профессии', w:'der Arzt', p:'[арцт]', t:'врач'},
+  {c:'Семья, люди, профессии', w:'der Student', p:'[шту-дэ́нт]', t:'студент'},
+  {c:'Семья, люди, профессии', w:'der Mann', p:'[ман]', t:'мужчина'},
+  {c:'Семья, люди, профессии', w:'die Frau', p:'[фра́-у]', t:'женщина'},
+  {c:'Семья, люди, профессии', w:'das Kind', p:'[кинт]', t:'ребёнок'},
+  {c:'Семья, люди, профессии', w:'der Junge', p:'[ю́н-гэ]', t:'мальчик'},
+  {c:'Семья, люди, профессии', w:'das Mädchen', p:'[мэ́д-хэн]', t:'девочка'},
+  {c:'Семья, люди, профессии', w:'der Mensch', p:'[мэнш]', t:'человек'},
+  {c:'Семья, люди, профессии', w:'der Name', p:'[на́-мэ]', t:'имя'},
+  {c:'Семья, люди, профессии', w:'der Beruf', p:'[бэ-ру́ф]', t:'профессия'},
+
+  /* Дом */
+  {c:'Дом, квартира, мебель', w:'das Haus', p:'[хаус]', t:'дом'},
+  {c:'Дом, квартира, мебель', w:'die Wohnung', p:'[во́-нунг]', t:'квартира'},
+  {c:'Дом, квартира, мебель', w:'das Zimmer', p:'[ци́-мэр]', t:'комната'},
+  {c:'Дом, квартира, мебель', w:'die Küche', p:'[кю́-хэ]', t:'кухня'},
+  {c:'Дом, квартира, мебель', w:'das Bad', p:'[бат]', t:'ванная'},
+  {c:'Дом, квартира, мебель', w:'das Schlafzimmer', p:'[шла́ф-ци-мэр]', t:'спальня'},
+  {c:'Дом, квартира, мебель', w:'das Wohnzimmer', p:'[во́н-ци-мэр]', t:'гостиная'},
+  {c:'Дом, квартира, мебель', w:'der Balkon', p:'[баль-ко́н]', t:'балкон'},
+  {c:'Дом, квартира, мебель', w:'der Garten', p:'[га́р-тэн]', t:'сад'},
+  {c:'Дом, квартира, мебель', w:'die Tür', p:'[тюр]', t:'дверь'},
+  {c:'Дом, квартира, мебель', w:'das Fenster', p:'[фэ́н-стэр]', t:'окно'},
+  {c:'Дом, квартира, мебель', w:'der Tisch', p:'[тиш]', t:'стол'},
+  {c:'Дом, квартира, мебель', w:'der Stuhl', p:'[штуль]', t:'стул'},
+  {c:'Дом, квартира, мебель', w:'das Sofa', p:'[зо́-фа]', t:'диван'},
+  {c:'Дом, квартира, мебель', w:'das Bett', p:'[бэт]', t:'кровать'},
+  {c:'Дом, квартира, мебель', w:'der Schrank', p:'[шранк]', t:'шкаф'},
+  {c:'Дом, квартира, мебель', w:'die Lampe', p:'[ла́м-пэ]', t:'лампа'},
+  {c:'Дом, квартира, мебель', w:'der Kühlschrank', p:'[кю́ль-шранк]', t:'холодильник'},
+  {c:'Дом, квартира, мебель', w:'die Dusche', p:'[ду́-шэ]', t:'душ'},
+  {c:'Дом, квартира, мебель', w:'die Treppe', p:'[трэ́-пэ]', t:'лестница'},
+  {c:'Дом, квартира, мебель', w:'der Schlüssel', p:'[шлю́-сэль]', t:'ключ'},
+
+  /* Еда */
+  {c:'Еда, напитки, магазины', w:'das Brot', p:'[брот]', t:'хлеб'},
+  {c:'Еда, напитки, магазины', w:'das Brötchen', p:'[брё́т-хэн]', t:'булочка'},
+  {c:'Еда, напитки, магазины', w:'die Butter', p:'[бу́-тэр]', t:'масло'},
+  {c:'Еда, напитки, магазины', w:'der Käse', p:'[кэ́-зэ]', t:'сыр'},
+  {c:'Еда, напитки, магазины', w:'das Ei', p:'[ай]', t:'яйцо'},
+  {c:'Еда, напитки, магазины', w:'der Apfel', p:'[а́п-фэль]', t:'яблоко'},
+  {c:'Еда, напитки, магазины', w:'die Banane', p:'[ба-на́-нэ]', t:'банан'},
+  {c:'Еда, напитки, магазины', w:'die Tomate', p:'[то-ма́-тэ]', t:'помидор'},
+  {c:'Еда, напитки, магазины', w:'die Kartoffel', p:'[кар-то́-фэль]', t:'картофель'},
+  {c:'Еда, напитки, магазины', w:'das Gemüse', p:'[гэ-мю́-зэ]', t:'овощи'},
+  {c:'Еда, напитки, магазины', w:'das Obst', p:'[обст]', t:'фрукты'},
+  {c:'Еда, напитки, магазины', w:'die Suppe', p:'[зу́-пэ]', t:'суп'},
+  {c:'Еда, напитки, магазины', w:'der Salat', p:'[за-ла́т]', t:'салат'},
+  {c:'Еда, напитки, магазины', w:'das Wasser', p:'[ва́-сэр]', t:'вода'},
+  {c:'Еда, напитки, магазины', w:'der Kaffee', p:'[ка-фэ́]', t:'кофе'},
+  {c:'Еда, напитки, магазины', w:'der Tee', p:'[тэ]', t:'чай'},
+  {c:'Еда, напитки, магазины', w:'die Milch', p:'[мильхь]', t:'молоко'},
+  {c:'Еда, напитки, магазины', w:'das Bier', p:'[бир]', t:'пиво'},
+  {c:'Еда, напитки, магазины', w:'der Supermarkt', p:'[зу́-пэр-маркт]', t:'супермаркет'},
+  {c:'Еда, напитки, магазины', w:'die Bäckerei', p:'[бэ-кэ-ра́й]', t:'булочная'},
+  {c:'Еда, напитки, магазины', w:'die Apotheke', p:'[а-по-тэ́-кэ]', t:'аптека'},
+  {c:'Еда, напитки, магазины', w:'der Preis', p:'[прайс]', t:'цена'},
+  {c:'Еда, напитки, магазины', w:'der Euro', p:'[о́й-ро]', t:'евро'},
+  {c:'Еда, напитки, магазины', w:'das Geld', p:'[гэльт]', t:'деньги'},
+
+  /* Город */
+  {c:'Город, транспорт, места', w:'die Stadt', p:'[штат]', t:'город'},
+  {c:'Город, транспорт, места', w:'die Straße', p:'[штра́-сэ]', t:'улица'},
+  {c:'Город, транспорт, места', w:'der Platz', p:'[плац]', t:'площадь'},
+  {c:'Город, транспорт, места', w:'der Bahnhof', p:'[ба́н-хоф]', t:'вокзал'},
+  {c:'Город, транспорт, места', w:'der Flughafen', p:'[флю́к-ха-фэн]', t:'аэропорт'},
+  {c:'Город, транспорт, места', w:'die Post', p:'[пост]', t:'почта'},
+  {c:'Город, транспорт, места', w:'die Bank', p:'[банк]', t:'банк'},
+  {c:'Город, транспорт, места', w:'die Schule', p:'[шу́-лэ]', t:'школа'},
+  {c:'Город, транспорт, места', w:'das Kino', p:'[ки́-но]', t:'кино'},
+  {c:'Город, транспорт, места', w:'das Theater', p:'[тэ-а́-тэр]', t:'театр'},
+  {c:'Город, транспорт, места', w:'das Museum', p:'[му-зэ́-ум]', t:'музей'},
+  {c:'Город, транспорт, места', w:'das Restaurant', p:'[рэс-то-ра́н]', t:'ресторан'},
+  {c:'Город, транспорт, места', w:'das Café', p:'[ка-фэ́]', t:'кафе'},
+  {c:'Город, транспорт, места', w:'der Park', p:'[парк]', t:'парк'},
+  {c:'Город, транспорт, места', w:'das Hotel', p:'[хо-тэ́ль]', t:'отель'},
+  {c:'Город, транспорт, места', w:'der Bus', p:'[бус]', t:'автобус'},
+  {c:'Город, транспорт, места', w:'der Zug', p:'[цук]', t:'поезд'},
+  {c:'Город, транспорт, места', w:'die U-Bahn', p:'[у́-бан]', t:'метро'},
+  {c:'Город, транспорт, места', w:'das Auto', p:'[а́у-то]', t:'машина'},
+  {c:'Город, транспорт, места', w:'das Fahrrad', p:'[фа́р-рат]', t:'велосипед'},
+  {c:'Город, транспорт, места', w:'das Taxi', p:'[та́к-си]', t:'такси'},
+  {c:'Город, транспорт, места', w:'die Fahrkarte', p:'[фа́р-кар-тэ]', t:'билет'},
+  {c:'Город, транспорт, места', w:'die Adresse', p:'[а-дрэ́-сэ]', t:'адрес'},
+
+  /* Время */
+  {c:'Время, дни, месяцы', w:'der Tag', p:'[так]', t:'день'},
+  {c:'Время, дни, месяцы', w:'die Woche', p:'[во́-хэ]', t:'неделя'},
+  {c:'Время, дни, месяцы', w:'der Monat', p:'[мо́-нат]', t:'месяц'},
+  {c:'Время, дни, месяцы', w:'das Jahr', p:'[яр]', t:'год'},
+  {c:'Время, дни, месяцы', w:'die Stunde', p:'[шту́н-дэ]', t:'час'},
+  {c:'Время, дни, месяцы', w:'die Minute', p:'[ми-ну́-тэ]', t:'минута'},
+  {c:'Время, дни, месяцы', w:'die Uhr', p:'[ур]', t:'часы'},
+  {c:'Время, дни, месяцы', w:'der Morgen', p:'[мо́р-гэн]', t:'утро'},
+  {c:'Время, дни, месяцы', w:'der Abend', p:'[а́-бэнт]', t:'вечер'},
+  {c:'Время, дни, месяцы', w:'die Nacht', p:'[нахт]', t:'ночь'},
+  {c:'Время, дни, месяцы', w:'der Montag', p:'[мо́н-так]', t:'понедельник'},
+  {c:'Время, дни, месяцы', w:'der Dienstag', p:'[ди́нс-так]', t:'вторник'},
+  {c:'Время, дни, месяцы', w:'der Mittwoch', p:'[ми́т-вох]', t:'среда'},
+  {c:'Время, дни, месяцы', w:'der Donnerstag', p:'[до́-нэрс-так]', t:'четверг'},
+  {c:'Время, дни, месяцы', w:'der Freitag', p:'[фра́й-так]', t:'пятница'},
+  {c:'Время, дни, месяцы', w:'der Samstag', p:'[за́мс-так]', t:'суббота'},
+  {c:'Время, дни, месяцы', w:'der Sonntag', p:'[зо́н-так]', t:'воскресенье'},
+  {c:'Время, дни, месяцы', w:'das Wochenende', p:'[во́-хэн-эн-дэ]', t:'выходные'},
+  {c:'Время, дни, месяцы', w:'der Januar', p:'[я́-ну-ар]', t:'январь'},
+  {c:'Время, дни, месяцы', w:'der Februar', p:'[фэ́-бру-ар]', t:'февраль'},
+  {c:'Время, дни, месяцы', w:'der März', p:'[мэрц]', t:'март'},
+  {c:'Время, дни, месяцы', w:'der April', p:'[ап-ри́ль]', t:'апрель'},
+  {c:'Время, дни, месяцы', w:'der Mai', p:'[май]', t:'май'},
+  {c:'Время, дни, месяцы', w:'der Juni', p:'[ю́-ни]', t:'июнь'},
+  {c:'Время, дни, месяцы', w:'der Juli', p:'[ю́-ли]', t:'июль'},
+  {c:'Время, дни, месяцы', w:'der August', p:'[а́у-густ]', t:'август'},
+  {c:'Время, дни, месяцы', w:'der September', p:'[зэп-тэ́м-бэр]', t:'сентябрь'},
+  {c:'Время, дни, месяцы', w:'der Oktober', p:'[ок-то́-бэр]', t:'октябрь'},
+  {c:'Время, дни, месяцы', w:'der November', p:'[но-вэ́м-бэр]', t:'ноябрь'},
+  {c:'Время, дни, месяцы', w:'der Dezember', p:'[дэ-цэ́м-бэр]', t:'декабрь'},
+  {c:'Время, дни, месяцы', w:'heute', p:'[хо́й-тэ]', t:'сегодня'},
+  {c:'Время, дни, месяцы', w:'morgen', p:'[мо́р-гэн]', t:'завтра'},
+  {c:'Время, дни, месяцы', w:'gestern', p:'[гэ́-стэрн]', t:'вчера'},
+  {c:'Время, дни, месяцы', w:'jetzt', p:'[йецт]', t:'сейчас'},
+
+  /* Тело */
+  {c:'Тело, здоровье, одежда', w:'der Kopf', p:'[копф]', t:'голова'},
+  {c:'Тело, здоровье, одежда', w:'das Auge', p:'[а́у-гэ]', t:'глаз'},
+  {c:'Тело, здоровье, одежда', w:'die Nase', p:'[на́-зэ]', t:'нос'},
+  {c:'Тело, здоровье, одежда', w:'der Mund', p:'[мунт]', t:'рот'},
+  {c:'Тело, здоровье, одежда', w:'das Ohr', p:'[ор]', t:'ухо'},
+  {c:'Тело, здоровье, одежда', w:'der Zahn', p:'[цан]', t:'зуб'},
+  {c:'Тело, здоровье, одежда', w:'der Hals', p:'[хальс]', t:'шея, горло'},
+  {c:'Тело, здоровье, одежда', w:'der Arm', p:'[арм]', t:'рука'},
+  {c:'Тело, здоровье, одежда', w:'die Hand', p:'[хант]', t:'кисть руки'},
+  {c:'Тело, здоровье, одежда', w:'das Bein', p:'[байн]', t:'нога'},
+  {c:'Тело, здоровье, одежда', w:'der Fuß', p:'[фус]', t:'ступня'},
+  {c:'Тело, здоровье, одежда', w:'der Bauch', p:'[баух]', t:'живот'},
+  {c:'Тело, здоровье, одежда', w:'der Rücken', p:'[рю́-кэн]', t:'спина'},
+  {c:'Тело, здоровье, одежда', w:'das Herz', p:'[хэрц]', t:'сердце'},
+  {c:'Тело, здоровье, одежда', w:'die Tablette', p:'[та-блэ́-тэ]', t:'таблетка'},
+  {c:'Тело, здоровье, одежда', w:'das Hemd', p:'[хэмт]', t:'рубашка'},
+  {c:'Тело, здоровье, одежда', w:'die Hose', p:'[хо́-зэ]', t:'брюки'},
+  {c:'Тело, здоровье, одежда', w:'die Jacke', p:'[я́-кэ]', t:'куртка'},
+  {c:'Тело, здоровье, одежда', w:'der Mantel', p:'[ма́н-тэль]', t:'пальто'},
+  {c:'Тело, здоровье, одежда', w:'das Kleid', p:'[клайт]', t:'платье'},
+  {c:'Тело, здоровье, одежда', w:'der Schuh', p:'[шу]', t:'обувь'},
+  {c:'Тело, здоровье, одежда', w:'die Brille', p:'[бри́-лэ]', t:'очки'},
+
+  /* Прилагательные */
+  {c:'Прилагательные', w:'gut', p:'[гут]', t:'хороший'},
+  {c:'Прилагательные', w:'schlecht', p:'[шлехьт]', t:'плохой'},
+  {c:'Прилагательные', w:'groß', p:'[грос]', t:'большой'},
+  {c:'Прилагательные', w:'klein', p:'[клайн]', t:'маленький'},
+  {c:'Прилагательные', w:'neu', p:'[ной]', t:'новый'},
+  {c:'Прилагательные', w:'alt', p:'[альт]', t:'старый'},
+  {c:'Прилагательные', w:'jung', p:'[юнг]', t:'молодой'},
+  {c:'Прилагательные', w:'schön', p:'[шён]', t:'красивый'},
+  {c:'Прилагательные', w:'teuer', p:'[то́й-эр]', t:'дорогой'},
+  {c:'Прилагательные', w:'billig', p:'[би́-лихь]', t:'дешёвый'},
+  {c:'Прилагательные', w:'schnell', p:'[шнэль]', t:'быстрый'},
+  {c:'Прилагательные', w:'langsam', p:'[ла́нг-зам]', t:'медленный'},
+  {c:'Прилагательные', w:'warm', p:'[варм]', t:'тёплый'},
+  {c:'Прилагательные', w:'kalt', p:'[кальт]', t:'холодный'},
+  {c:'Прилагательные', w:'glücklich', p:'[глю́к-лихь]', t:'счастливый'},
+  {c:'Прилагательные', w:'traurig', p:'[тра́у-рихь]', t:'грустный'},
+  {c:'Прилагательные', w:'müde', p:'[мю́-дэ]', t:'усталый'},
+  {c:'Прилагательные', w:'krank', p:'[кранк]', t:'больной'},
+  {c:'Прилагательные', w:'gesund', p:'[гэ-зу́нт]', t:'здоровый'},
+  {c:'Прилагательные', w:'lecker', p:'[ле́-кэр]', t:'вкусный'},
+  {c:'Прилагательные', w:'nett', p:'[нэт]', t:'милый'},
+  {c:'Прилагательные', w:'wichtig', p:'[ви́хь-тихь]', t:'важный'},
+  {c:'Прилагательные', w:'interessant', p:'[ин-тэ-рэ-са́нт]', t:'интересный'},
+  {c:'Прилагательные', w:'schwierig', p:'[шви́-рихь]', t:'трудный'},
+
+  /* Наречия */
+  {c:'Наречия', w:'hier', p:'[хир]', t:'здесь'},
+  {c:'Наречия', w:'dort', p:'[дорт]', t:'там'},
+  {c:'Наречия', w:'links', p:'[линкс]', t:'слева'},
+  {c:'Наречия', w:'rechts', p:'[рэхьтс]', t:'справа'},
+  {c:'Наречия', w:'oben', p:'[о́-бэн]', t:'наверху'},
+  {c:'Наречия', w:'unten', p:'[у́н-тэн]', t:'внизу'},
+  {c:'Наречия', w:'weit', p:'[вайт]', t:'далеко'},
+  {c:'Наречия', w:'nah', p:'[на]', t:'близко'},
+  {c:'Наречия', w:'schon', p:'[шон]', t:'уже'},
+  {c:'Наречия', w:'noch', p:'[нох]', t:'ещё'},
+  {c:'Наречия', w:'sehr', p:'[зэр]', t:'очень'},
+  {c:'Наречия', w:'viel', p:'[филь]', t:'много'},
+  {c:'Наречия', w:'wenig', p:'[вэ́-нихь]', t:'мало'},
+  {c:'Наречия', w:'nur', p:'[нур]', t:'только'},
+  {c:'Наречия', w:'auch', p:'[аух]', t:'тоже'},
+  {c:'Наречия', w:'gern', p:'[гэрн]', t:'охотно'},
+  {c:'Наречия', w:'vielleicht', p:'[фи-ля́йхьт]', t:'может быть'},
+  {c:'Наречия', w:'natürlich', p:'[на-тю́р-лихь]', t:'конечно'},
+  {c:'Наречия', w:'zusammen', p:'[цу-за́-мэн]', t:'вместе'},
+  {c:'Наречия', w:'allein', p:'[а-ля́йн]', t:'один'},
+
+  /* Служебные */
+  {c:'Служебные слова', w:'ich', p:'[ихь]', t:'я'},
+  {c:'Служебные слова', w:'du', p:'[ду]', t:'ты'},
+  {c:'Служебные слова', w:'er', p:'[эр]', t:'он'},
+  {c:'Служебные слова', w:'sie', p:'[зи]', t:'она, они'},
+  {c:'Служебные слова', w:'wir', p:'[вир]', t:'мы'},
+  {c:'Служебные слова', w:'mein', p:'[майн]', t:'мой'},
+  {c:'Служебные слова', w:'dein', p:'[дайн]', t:'твой'},
+  {c:'Служебные слова', w:'mit', p:'[мит]', t:'с (кем-то)'},
+  {c:'Служебные слова', w:'nach', p:'[нах]', t:'после; в'},
+  {c:'Служебные слова', w:'von', p:'[фон]', t:'от, из'},
+  {c:'Служебные слова', w:'zu', p:'[цу]', t:'к, в'},
+  {c:'Служебные слова', w:'bei', p:'[бай]', t:'у (кого-то)'},
+  {c:'Служебные слова', w:'für', p:'[фюр]', t:'для'},
+  {c:'Служебные слова', w:'ohne', p:'[о́-нэ]', t:'без'},
+  {c:'Служебные слова', w:'um', p:'[ум]', t:'в (о времени)'},
+  {c:'Служебные слова', w:'in', p:'[ин]', t:'в'},
+  {c:'Служебные слова', w:'auf', p:'[ауф]', t:'на'},
+  {c:'Служебные слова', w:'und', p:'[унт]', t:'и'},
+  {c:'Служебные слова', w:'oder', p:'[о́-дэр]', t:'или'},
+  {c:'Служебные слова', w:'aber', p:'[а́-бэр]', t:'но'},
+  {c:'Служебные слова', w:'weil', p:'[вайль]', t:'потому что'},
+  {c:'Служебные слова', w:'wer', p:'[вэр]', t:'кто'},
+  {c:'Служебные слова', w:'was', p:'[вас]', t:'что'},
+  {c:'Служебные слова', w:'wo', p:'[во]', t:'где'},
+  {c:'Служебные слова', w:'wann', p:'[ван]', t:'когда'},
+  {c:'Служебные слова', w:'wie', p:'[ви]', t:'как'},
+  {c:'Служебные слова', w:'warum', p:'[ва-ру́м]', t:'почему'},
+  {c:'Служебные слова', w:'nicht', p:'[нихьт]', t:'не'},
+  {c:'Служебные слова', w:'kein', p:'[кайн]', t:'никакой'},
+
+  /* Числительные */
+  {c:'Числительные', w:'eins', p:'[айнс]', t:'один'},
+  {c:'Числительные', w:'zwei', p:'[цвай]', t:'два'},
+  {c:'Числительные', w:'drei', p:'[драй]', t:'три'},
+  {c:'Числительные', w:'vier', p:'[фир]', t:'четыре'},
+  {c:'Числительные', w:'fünf', p:'[фюнф]', t:'пять'},
+  {c:'Числительные', w:'sechs', p:'[зэкс]', t:'шесть'},
+  {c:'Числительные', w:'sieben', p:'[зи́-бэн]', t:'семь'},
+  {c:'Числительные', w:'acht', p:'[ахт]', t:'восемь'},
+  {c:'Числительные', w:'neun', p:'[нойн]', t:'девять'},
+  {c:'Числительные', w:'zehn', p:'[цэн]', t:'десять'},
+  {c:'Числительные', w:'elf', p:'[эльф]', t:'одиннадцать'},
+  {c:'Числительные', w:'zwölf', p:'[цвёльф]', t:'двенадцать'},
+  {c:'Числительные', w:'zwanzig', p:'[цва́н-цихь]', t:'двадцать'},
+  {c:'Числительные', w:'dreißig', p:'[дра́й-сихь]', t:'тридцать'},
+  {c:'Числительные', w:'hundert', p:'[ху́н-дэрт]', t:'сто'},
+  {c:'Числительные', w:'tausend', p:'[та́у-зэнт]', t:'тысяча'},
+
+  /* Фразы */
+  {c:'Полезные фразы', w:'Hallo', p:'[ха-лё]', t:'Привет'},
+  {c:'Полезные фразы', w:'Guten Morgen', p:'[гу́-тэн мо́р-гэн]', t:'Доброе утро'},
+  {c:'Полезные фразы', w:'Guten Tag', p:'[гу́-тэн так]', t:'Добрый день'},
+  {c:'Полезные фразы', w:'Guten Abend', p:'[гу́-тэн а́-бэнт]', t:'Добрый вечер'},
+  {c:'Полезные фразы', w:'Tschüss', p:'[чюс]', t:'Пока'},
+  {c:'Полезные фразы', w:'Auf Wiedersehen', p:'[ауф ви́-дэр-зэ-эн]', t:'До свидания'},
+  {c:'Полезные фразы', w:'Bitte', p:'[би́-тэ]', t:'Пожалуйста'},
+  {c:'Полезные фразы', w:'Danke schön', p:'[да́н-кэ шён]', t:'Большое спасибо'},
+  {c:'Полезные фразы', w:'Entschuldigung', p:'[энт-шу́ль-ди-гунг]', t:'Извините'},
+  {c:'Полезные фразы', w:'Es tut mir leid', p:'[эс тут мир ляйд]', t:'Мне жаль'},
+  {c:'Полезные фразы', w:'Wie bitte?', p:'[ви би́-тэ]', t:'Простите?'},
+  {c:'Полезные фразы', w:'Ich verstehe nicht', p:'[ихь фэр-штэ́-э нихьт]', t:'Я не понимаю'},
+  {c:'Полезные фразы', w:'Ich weiß nicht', p:'[ихь вайс нихьт]', t:'Я не знаю'},
+  {c:'Полезные фразы', w:'Alles klar', p:'[а́-лэс клар]', t:'Всё понятно'}
+];
+OTHER.forEach(o => AUDIO_CARDS.push(o));
+
+/* =====================================================
+   ЛОГИКА ПЛЕЕРА
+   ===================================================== */
+
+let currentSpeed = 0.6;
+let deck = [];
+let deckName = 'all';
+let currentIndex = 0;
+let isPlaying = false;
+let timer = null;
+
+const FEMALE_VOICE_NAMES = ['anna','katja','marlene','vicki','petra','helena','google deutsch'];
+const MALE_VOICE_NAMES = ['hans','stefan','klaus','yannick','conrad'];
+
+let cachedVoices = [];
+function loadVoices() { cachedVoices = window.speechSynthesis.getVoices(); }
+
+function pickGermanFemaleVoice() {
+  if (!cachedVoices.length) loadVoices();
+  const germanVoices = cachedVoices.filter(v => v.lang === 'de-DE' || v.lang.startsWith('de'));
+  if (!germanVoices.length) return null;
+  for (const name of FEMALE_VOICE_NAMES) {
+    const v = germanVoices.find(g => g.name.toLowerCase().includes(name));
+    if (v) return v;
+  }
+  const nonMale = germanVoices.filter(g => !MALE_VOICE_NAMES.some(m => g.name.toLowerCase().includes(m)));
+  if (nonMale.length) return nonMale[0];
+  return germanVoices[0];
+}
+
+function pickRussianVoice() {
+  if (!cachedVoices.length) loadVoices();
+  return cachedVoices.find(v => v.lang === 'ru-RU') || cachedVoices.find(v => v.lang.startsWith('ru')) || null;
+}
+
+function setSpeed(mode) {
+  currentSpeed = (mode === 'slow') ? 0.6 : 0.9;
+  document.getElementById('speedSlow').classList.toggle('active', mode === 'slow');
+  document.getElementById('speedNormal').classList.toggle('active', mode === 'normal');
+}
+
+function changeDeck() {
+  deckName = document.getElementById('deckSelect').value;
+  if (deckName === 'all') {
+    deck = shuffle(AUDIO_CARDS.slice());
+    document.getElementById('deckName').textContent = 'Все слова · ' + deck.length;
+  } else {
+    deck = shuffle(AUDIO_CARDS.filter(c => c.c === deckName));
+    document.getElementById('deckName').textContent = deckName + ' · ' + deck.length;
+  }
+  currentIndex = 0;
+  updateDisplay();
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function updateDisplay() {
+  const total = deck.length;
+  const info = document.getElementById('progressInfo');
+  const fill = document.getElementById('progressFill');
+
+  if (!total) {
+    document.getElementById('wordDisplay').textContent = 'Нет слов';
+    document.getElementById('pronDisplay').textContent = '';
+    document.getElementById('transDisplay').textContent = '';
+    info.textContent = '0 / 0';
+    fill.style.width = '0%';
+    return;
+  }
+
+  if (currentIndex >= total) {
+    document.getElementById('wordDisplay').textContent = 'Готово! 🎉';
+    document.getElementById('pronDisplay').textContent = '';
+    document.getElementById('transDisplay').textContent = '';
+    info.textContent = total + ' / ' + total;
+    fill.style.width = '100%';
+    return;
+  }
+
+  const c = deck[currentIndex];
+  document.getElementById('wordDisplay').textContent = c.w;
+  document.getElementById('pronDisplay').textContent = c.p || '';
+  document.getElementById('transDisplay').textContent =
+    document.getElementById('showTranslation').checked ? (c.t || '') : '';
+
+  info.textContent = (currentIndex + 1) + ' / ' + total;
+  fill.style.width = ((currentIndex + 1) / total * 100) + '%';
+}
+
+function speakCurrent(callback) {
+  if (currentIndex >= deck.length) { if (callback) callback(); return; }
+  const c = deck[currentIndex];
+  window.speechSynthesis.cancel();
+
+  const uDe = new SpeechSynthesisUtterance(c.w);
+  uDe.lang = 'de-DE';
+  uDe.rate = currentSpeed;
+  uDe.pitch = 1.15;
+  const voice = pickGermanFemaleVoice();
+  if (voice) uDe.voice = voice;
+
+  uDe.onend = () => {
+    if (!isPlaying) { if (callback) callback(); return; }
+
+    if (c.t && document.getElementById('showTranslation').checked) {
+      timer = setTimeout(() => {
+        if (!isPlaying) return;
+        const uRu = new SpeechSynthesisUtterance(c.t);
+        uRu.lang = 'ru-RU';
+        uRu.rate = 0.95;
+        uRu.pitch = 1.1;
+        const ruVoice = pickRussianVoice();
+        if (ruVoice) uRu.voice = ruVoice;
+        uRu.onend = () => {
+          if (!isPlaying) return;
+          timer = setTimeout(() => {
+            if (!isPlaying) return;
+            currentIndex++;
+            updateDisplay();
+            speakCurrent();
+          }, 1200);
+        };
+        window.speechSynthesis.speak(uRu);
+      }, 400);
+    } else {
+      timer = setTimeout(() => {
+        if (!isPlaying) return;
+        currentIndex++;
+        updateDisplay();
+        speakCurrent();
+      }, 1200);
+    }
+  };
+
+  window.speechSynthesis.speak(uDe);
+}
+
+function play() {
+  if (currentIndex >= deck.length) currentIndex = 0;
+  isPlaying = true;
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('pauseBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = false;
+  speakCurrent();
+}
+
+function pause() {
+  isPlaying = false;
+  clearTimeout(timer);
+  window.speechSynthesis.cancel();
+  document.getElementById('playBtn').disabled = false;
+  document.getElementById('pauseBtn').disabled = true;
+}
+
+function stop() {
+  isPlaying = false;
+  clearTimeout(timer);
+  window.speechSynthesis.cancel();
+  currentIndex = 0;
+  updateDisplay();
+  document.getElementById('playBtn').disabled = false;
+  document.getElementById('pauseBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = true;
+}
+
+function next() {
+  if (currentIndex + 1 < deck.length) {
+    currentIndex++;
+    updateDisplay();
+    if (isPlaying) {
+      clearTimeout(timer);
+      window.speechSynthesis.cancel();
+      speakCurrent();
+    } else {
+      speakCurrent();
+    }
+  }
+}
+
+/* Автозапуск при загрузке */
+window.addEventListener('load', () => {
+  changeDeck();
+});
+
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+</script>
+
+</body>
+</html>

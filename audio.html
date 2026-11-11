@@ -31,7 +31,6 @@
     line-height: 1.5;
   }
 
-  /* Панель управления */
   .controls {
     max-width: 640px;
     margin: 0 auto 22px;
@@ -86,7 +85,6 @@
     color: #fff;
   }
 
-  /* Плеер */
   .player {
     max-width: 520px;
     margin: 0 auto;
@@ -211,7 +209,6 @@
     justify-content: center;
   }
 
-  /* Настройки */
   .settings-row {
     max-width: 520px;
     margin: 22px auto 0;
@@ -238,7 +235,6 @@
     cursor: pointer;
   }
 
-  /* Информация */
   .info {
     max-width: 520px;
     margin: 30px auto 0;
@@ -254,6 +250,22 @@
 
   .info strong { color: #ffd166; }
 
+  .bg-warning {
+    max-width: 520px;
+    margin: 14px auto 0;
+    padding: 12px 16px;
+    background: rgba(255,82,82,0.15);
+    border: 1px solid rgba(255,82,82,0.4);
+    border-radius: 12px;
+    font-size: 0.82rem;
+    color: #ffd0d0;
+    line-height: 1.5;
+    text-align: center;
+    display: none;
+  }
+  .bg-warning.show { display: block; }
+  .bg-warning strong { color: #fff; }
+
   @media (max-width: 480px) {
     h1 { font-size: 1.4rem; }
     .word-display { font-size: 1.5rem; }
@@ -265,9 +277,8 @@
 <body>
 
 <h1>🎧 Режим звука</h1>
-<p class="subtitle">Слушай слова подряд · Учи на слух · Без карточек</p>
+<p class="subtitle">Слушай слова подряд · Учи на слух · Работает при погасшем экране</p>
 
-<!-- Верхняя панель -->
 <div class="controls">
   <select class="deck-select" id="deckSelect" onchange="changeDeck()">
     <option value="all">🎵 Все слова (~340)</option>
@@ -292,7 +303,6 @@
   </div>
 </div>
 
-<!-- Плеер -->
 <div class="player">
   <div class="deck-name" id="deckName">— выберите колоду —</div>
 
@@ -312,7 +322,6 @@
   </div>
 </div>
 
-<!-- Настройки -->
 <div class="settings-row">
   <label>
     <input type="checkbox" id="showTranslation" checked onchange="updateDisplay()">
@@ -326,14 +335,17 @@
 </div>
 
 <div class="info">
-  <strong>💡 Совет:</strong> выберите колоду → нажмите <strong>▶ Играть</strong> → слушайте слова подряд с переводом. 
-  Можно свернуть браузер и учить на слух: на прогулке, лёжа, в дороге.
+  <strong>💡 Совет:</strong> выберите колоду → нажмите <strong>▶ Играть</strong> → слушайте слова подряд с переводом.
+  Можно свернуть браузер или погасить экран: воспроизведение продолжается благодаря фоновому режиму.
+</div>
+
+<div class="bg-warning" id="bgWarning">
+  <strong>⚠️ Фоновый режим недоступен:</strong> браузер блокирует Google TTS. Слова всё равно воспроизводятся, но при погасшем экране возможны паузы.
 </div>
 
 <script>
 /* =====================================================
-   БАЗА СЛОВ (короткая — только для аудио)
-   Формат: { c: категория, w: слово, p: произношение, t: перевод }
+   БАЗА СЛОВ
    ===================================================== */
 
 const AUDIO_CARDS = [];
@@ -420,9 +432,8 @@ const AUDIO_CARDS = [];
   {w:'Wohnen Sie gern in Deutschland?', p:'[во́-нэн зи гэрн ин дойч-лант]', t:'Нравится в Германии?'}
 ].forEach(v => AUDIO_CARDS.push({c:'Вопросы', w:v.w, p:v.p, t:v.t}));
 
-/* Остальные — с указанием категории */
+/* Остальные */
 const OTHER = [
-  /* Семья */
   {c:'Семья, люди, профессии', w:'der Vater', p:'[фа́-тэр]', t:'отец'},
   {c:'Семья, люди, профессии', w:'die Mutter', p:'[му́-тэр]', t:'мать'},
   {c:'Семья, люди, профессии', w:'der Bruder', p:'[бру́-дэр]', t:'брат'},
@@ -444,7 +455,6 @@ const OTHER = [
   {c:'Семья, люди, профессии', w:'der Name', p:'[на́-мэ]', t:'имя'},
   {c:'Семья, люди, профессии', w:'der Beruf', p:'[бэ-ру́ф]', t:'профессия'},
 
-  /* Дом */
   {c:'Дом, квартира, мебель', w:'das Haus', p:'[хаус]', t:'дом'},
   {c:'Дом, квартира, мебель', w:'die Wohnung', p:'[во́-нунг]', t:'квартира'},
   {c:'Дом, квартира, мебель', w:'das Zimmer', p:'[ци́-мэр]', t:'комната'},
@@ -467,7 +477,6 @@ const OTHER = [
   {c:'Дом, квартира, мебель', w:'die Treppe', p:'[трэ́-пэ]', t:'лестница'},
   {c:'Дом, квартира, мебель', w:'der Schlüssel', p:'[шлю́-сэль]', t:'ключ'},
 
-  /* Еда */
   {c:'Еда, напитки, магазины', w:'das Brot', p:'[брот]', t:'хлеб'},
   {c:'Еда, напитки, магазины', w:'das Brötchen', p:'[брё́т-хэн]', t:'булочка'},
   {c:'Еда, напитки, магазины', w:'die Butter', p:'[бу́-тэр]', t:'масло'},
@@ -493,7 +502,6 @@ const OTHER = [
   {c:'Еда, напитки, магазины', w:'der Euro', p:'[о́й-ро]', t:'евро'},
   {c:'Еда, напитки, магазины', w:'das Geld', p:'[гэльт]', t:'деньги'},
 
-  /* Город */
   {c:'Город, транспорт, места', w:'die Stadt', p:'[штат]', t:'город'},
   {c:'Город, транспорт, места', w:'die Straße', p:'[штра́-сэ]', t:'улица'},
   {c:'Город, транспорт, места', w:'der Platz', p:'[плац]', t:'площадь'},
@@ -518,7 +526,6 @@ const OTHER = [
   {c:'Город, транспорт, места', w:'die Fahrkarte', p:'[фа́р-кар-тэ]', t:'билет'},
   {c:'Город, транспорт, места', w:'die Adresse', p:'[а-дрэ́-сэ]', t:'адрес'},
 
-  /* Время */
   {c:'Время, дни, месяцы', w:'der Tag', p:'[так]', t:'день'},
   {c:'Время, дни, месяцы', w:'die Woche', p:'[во́-хэ]', t:'неделя'},
   {c:'Время, дни, месяцы', w:'der Monat', p:'[мо́-нат]', t:'месяц'},
@@ -554,7 +561,6 @@ const OTHER = [
   {c:'Время, дни, месяцы', w:'gestern', p:'[гэ́-стэрн]', t:'вчера'},
   {c:'Время, дни, месяцы', w:'jetzt', p:'[йецт]', t:'сейчас'},
 
-  /* Тело */
   {c:'Тело, здоровье, одежда', w:'der Kopf', p:'[копф]', t:'голова'},
   {c:'Тело, здоровье, одежда', w:'das Auge', p:'[а́у-гэ]', t:'глаз'},
   {c:'Тело, здоровье, одежда', w:'die Nase', p:'[на́-зэ]', t:'нос'},
@@ -578,7 +584,6 @@ const OTHER = [
   {c:'Тело, здоровье, одежда', w:'der Schuh', p:'[шу]', t:'обувь'},
   {c:'Тело, здоровье, одежда', w:'die Brille', p:'[бри́-лэ]', t:'очки'},
 
-  /* Прилагательные */
   {c:'Прилагательные', w:'gut', p:'[гут]', t:'хороший'},
   {c:'Прилагательные', w:'schlecht', p:'[шлехьт]', t:'плохой'},
   {c:'Прилагательные', w:'groß', p:'[грос]', t:'большой'},
@@ -604,7 +609,6 @@ const OTHER = [
   {c:'Прилагательные', w:'interessant', p:'[ин-тэ-рэ-са́нт]', t:'интересный'},
   {c:'Прилагательные', w:'schwierig', p:'[шви́-рихь]', t:'трудный'},
 
-  /* Наречия */
   {c:'Наречия', w:'hier', p:'[хир]', t:'здесь'},
   {c:'Наречия', w:'dort', p:'[дорт]', t:'там'},
   {c:'Наречия', w:'links', p:'[линкс]', t:'слева'},
@@ -626,7 +630,6 @@ const OTHER = [
   {c:'Наречия', w:'zusammen', p:'[цу-за́-мэн]', t:'вместе'},
   {c:'Наречия', w:'allein', p:'[а-ля́йн]', t:'один'},
 
-  /* Служебные */
   {c:'Служебные слова', w:'ich', p:'[ихь]', t:'я'},
   {c:'Служебные слова', w:'du', p:'[ду]', t:'ты'},
   {c:'Служебные слова', w:'er', p:'[эр]', t:'он'},
@@ -657,7 +660,6 @@ const OTHER = [
   {c:'Служебные слова', w:'nicht', p:'[нихьт]', t:'не'},
   {c:'Служебные слова', w:'kein', p:'[кайн]', t:'никакой'},
 
-  /* Числительные */
   {c:'Числительные', w:'eins', p:'[айнс]', t:'один'},
   {c:'Числительные', w:'zwei', p:'[цвай]', t:'два'},
   {c:'Числительные', w:'drei', p:'[драй]', t:'три'},
@@ -675,7 +677,6 @@ const OTHER = [
   {c:'Числительные', w:'hundert', p:'[ху́н-дэрт]', t:'сто'},
   {c:'Числительные', w:'tausend', p:'[та́у-зэнт]', t:'тысяча'},
 
-  /* Фразы */
   {c:'Полезные фразы', w:'Hallo', p:'[ха-лё]', t:'Привет'},
   {c:'Полезные фразы', w:'Guten Morgen', p:'[гу́-тэн мо́р-гэн]', t:'Доброе утро'},
   {c:'Полезные фразы', w:'Guten Tag', p:'[гу́-тэн так]', t:'Добрый день'},
@@ -694,7 +695,146 @@ const OTHER = [
 OTHER.forEach(o => AUDIO_CARDS.push(o));
 
 /* =====================================================
-   ЛОГИКА ПЛЕЕРА
+   TTS + ФОНОВОЕ ВОСПРОИЗВЕДЕНИЕ
+   ===================================================== */
+
+const TTS_CONFIG = {
+  enabled: true,
+  googleBase: 'https://translate.google.com/translate_tts',
+  client: 'tw-ob'
+};
+
+const urlCache = new Map();
+let googleTTSFailures = 0;
+let googleTTSDisabled = false;
+
+// Единый аудиоплеер
+const audioPlayer = new Audio();
+audioPlayer.preload = 'auto';
+audioPlayer.preservesPitch = true;
+
+// «Тихий» аудиопоток для keep-alive
+let silentAudio = null;
+let silentAudioUri = null;
+
+function generateSilentWavUri(duration = 10) {
+  const sampleRate = 8000;
+  const numSamples = sampleRate * duration;
+  const buffer = new ArrayBuffer(44 + numSamples * 2);
+  const view = new DataView(buffer);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF');
+  view.setUint32(4, 36 + numSamples * 2, true);
+  w(8, 'WAVE'); w(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  w(36, 'data');
+  view.setUint32(40, numSamples * 2, true);
+  return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
+}
+
+function startSilentAudio() {
+  try {
+    if (!silentAudioUri) silentAudioUri = generateSilentWavUri();
+    if (!silentAudio) {
+      silentAudio = new Audio(silentAudioUri);
+      silentAudio.loop = true;
+      silentAudio.volume = 0.01;
+    }
+    silentAudio.play().catch(e => console.warn('silent audio:', e));
+  } catch(e) {}
+}
+
+function stopSilentAudio() {
+  if (silentAudio) {
+    try { silentAudio.pause(); silentAudio.currentTime = 0; } catch(e) {}
+  }
+}
+
+function setupMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: 'Deutsch A1 — Аудиоплеер',
+      artist: 'Немецкий язык A1',
+      album: 'Слова и фразы'
+    });
+    navigator.mediaSession.setActionHandler('play',  () => { try { play(); } catch(e){} });
+    navigator.mediaSession.setActionHandler('pause', () => { try { pause(); } catch(e){} });
+    navigator.mediaSession.setActionHandler('nexttrack', () => { try { next(); } catch(e){} });
+  } catch(e) { console.warn('MediaSession:', e); }
+}
+
+function setupIOSAudioSession() {
+  if ('audioSession' in navigator) {
+    try { navigator.audioSession.type = 'playback'; } catch(e) {}
+  }
+}
+
+function getTTSUrl(text, lang) {
+  if (!TTS_CONFIG.enabled || googleTTSDisabled) return null;
+  const key = text + '|' + lang;
+  if (urlCache.has(key)) return urlCache.get(key);
+  const url = `${TTS_CONFIG.googleBase}?ie=UTF-8&client=${TTS_CONFIG.client}` +
+              `&q=${encodeURIComponent(text)}&tl=${lang}`;
+  urlCache.set(key, url);
+  return url;
+}
+
+function onTTSFail() {
+  googleTTSFailures++;
+  if (googleTTSFailures >= 3 && !googleTTSDisabled) {
+    googleTTSDisabled = true;
+    console.warn('Google TTS отключён после 3 ошибок — fallback на speechSynthesis');
+    const w = document.getElementById('bgWarning');
+    if (w) w.classList.add('show');
+  }
+}
+
+function playAudioUrl(url, rate, onEnd, onError) {
+  if (!url) { onError && onError(); return; }
+  try {
+    audioPlayer.pause();
+    audioPlayer.src = url;
+    audioPlayer.playbackRate = rate || 1;
+    audioPlayer.onended = () => onEnd && onEnd();
+    audioPlayer.onerror = () => { onTTSFail(); onError && onError(); };
+    const p = audioPlayer.play();
+    if (p && p.catch) p.catch(() => { onTTSFail(); onError && onError(); });
+  } catch(e) {
+    onTTSFail();
+    onError && onError();
+  }
+}
+
+function speakViaSynth(text, lang, rate, onEnd) {
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = (lang === 'de') ? 'de-DE' : 'ru-RU';
+    u.rate = rate;
+    u.pitch = 1.15;
+    const v = (lang === 'de') ? pickGermanFemaleVoice() : pickRussianVoice();
+    if (v) u.voice = v;
+    u.onend = () => onEnd && onEnd();
+    window.speechSynthesis.speak(u);
+  } catch(e) { onEnd && onEnd(); }
+}
+
+function speakSmart(text, lang, rate, onEnd) {
+  const url = getTTSUrl(text, lang);
+  playAudioUrl(url, rate, onEnd, () => {
+    speakViaSynth(text, lang, rate, onEnd);
+  });
+}
+
+/* =====================================================
+   ОЗВУЧКА (голоса)
    ===================================================== */
 
 let currentSpeed = 0.6;
@@ -729,7 +869,7 @@ function pickRussianVoice() {
 }
 
 function setSpeed(mode) {
-  currentSpeed = (mode === 'slow') ? 0.6 : 0.9;
+  currentSpeed = (mode === 'slow') ? 0.85 : 1.15;
   document.getElementById('speedSlow').classList.toggle('active', mode === 'slow');
   document.getElementById('speedNormal').classList.toggle('active', mode === 'normal');
 }
@@ -792,37 +932,27 @@ function updateDisplay() {
 function speakCurrent(callback) {
   if (currentIndex >= deck.length) { if (callback) callback(); return; }
   const c = deck[currentIndex];
-  window.speechSynthesis.cancel();
 
-  const uDe = new SpeechSynthesisUtterance(c.w);
-  uDe.lang = 'de-DE';
-  uDe.rate = currentSpeed;
-  uDe.pitch = 1.15;
-  const voice = pickGermanFemaleVoice();
-  if (voice) uDe.voice = voice;
-
-  uDe.onend = () => {
+  // Шаг A: немецкое слово
+  speakSmart(c.w, 'de', currentSpeed, () => {
     if (!isPlaying) { if (callback) callback(); return; }
 
-    if (c.t && document.getElementById('showTranslation').checked) {
+    const showTrans = document.getElementById('showTranslation').checked;
+
+    if (c.t && showTrans) {
       timer = setTimeout(() => {
         if (!isPlaying) return;
-        const uRu = new SpeechSynthesisUtterance(c.t);
-        uRu.lang = 'ru-RU';
-        uRu.rate = 0.95;
-        uRu.pitch = 1.1;
-        const ruVoice = pickRussianVoice();
-        if (ruVoice) uRu.voice = ruVoice;
-        uRu.onend = () => {
+        // Шаг B: русский перевод
+        speakSmart(c.t, 'ru', 1.0, () => {
           if (!isPlaying) return;
+          // Шаг C: пауза и следующее слово
           timer = setTimeout(() => {
             if (!isPlaying) return;
             currentIndex++;
             updateDisplay();
             speakCurrent();
           }, 1200);
-        };
-        window.speechSynthesis.speak(uRu);
+        });
       }, 400);
     } else {
       timer = setTimeout(() => {
@@ -832,9 +962,7 @@ function speakCurrent(callback) {
         speakCurrent();
       }, 1200);
     }
-  };
-
-  window.speechSynthesis.speak(uDe);
+  });
 }
 
 function play() {
@@ -843,13 +971,22 @@ function play() {
   document.getElementById('playBtn').disabled = true;
   document.getElementById('pauseBtn').disabled = false;
   document.getElementById('stopBtn').disabled = false;
+
+  // Включаем всё для фона
+  setupIOSAudioSession();
+  setupMediaSession();
+  startSilentAudio();
+
   speakCurrent();
 }
 
 function pause() {
   isPlaying = false;
   clearTimeout(timer);
-  window.speechSynthesis.cancel();
+  try { window.speechSynthesis.cancel(); } catch(e) {}
+  try { audioPlayer.pause(); } catch(e) {}
+  stopSilentAudio();
+
   document.getElementById('playBtn').disabled = false;
   document.getElementById('pauseBtn').disabled = true;
 }
@@ -857,7 +994,10 @@ function pause() {
 function stop() {
   isPlaying = false;
   clearTimeout(timer);
-  window.speechSynthesis.cancel();
+  try { window.speechSynthesis.cancel(); } catch(e) {}
+  try { audioPlayer.pause(); audioPlayer.currentTime = 0; } catch(e) {}
+  stopSilentAudio();
+
   currentIndex = 0;
   updateDisplay();
   document.getElementById('playBtn').disabled = false;
@@ -871,17 +1011,25 @@ function next() {
     updateDisplay();
     if (isPlaying) {
       clearTimeout(timer);
-      window.speechSynthesis.cancel();
+      try { audioPlayer.pause(); } catch(e) {}
+      try { window.speechSynthesis.cancel(); } catch(e) {}
       speakCurrent();
     } else {
-      speakCurrent();
+      const c = deck[currentIndex];
+      speakSmart(c.w, 'de', currentSpeed);
     }
   }
 }
 
-/* Автозапуск при загрузке */
 window.addEventListener('load', () => {
   changeDeck();
+  // Прогрев TTS — один «пустой» запрос, чтобы первая озвучка не тормозила
+  try {
+    const warmup = new Audio();
+    warmup.preload = 'auto';
+    const url = getTTSUrl('Hallo', 'de');
+    if (url) warmup.src = url;
+  } catch(e) {}
 });
 
 window.speechSynthesis.onvoiceschanged = loadVoices;
